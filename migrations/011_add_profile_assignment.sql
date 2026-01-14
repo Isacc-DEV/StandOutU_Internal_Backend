@@ -1,0 +1,4 @@
+ALTER TABLE IF EXISTS profiles
+  ADD COLUMN IF NOT EXISTS assigned_bidder_id UUID REFERENCES users(id),
+  ADD COLUMN IF NOT EXISTS assigned_by UUID REFERENCES users(id),
+  ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP;

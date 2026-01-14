@@ -1,0 +1,2 @@
+ALTER TABLE IF EXISTS resumes
+  DROP COLUMN IF EXISTS resume_json;

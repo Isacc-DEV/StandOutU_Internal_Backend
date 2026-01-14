@@ -1,0 +1,1607 @@
+{
+  "countries": [
+    {
+      "name": "US"
+    },
+    {
+      "name": "EU"
+    },
+    {
+      "name": "WorldWide"
+    }
+  ],
+  "sources": [
+    {
+      "name": "Remote Rocketship"
+    },
+    {
+      "name": "Himalayas"
+    },
+    {
+      "name": "Remotive"
+    },
+    {
+      "name": "RemoteOK"
+    },
+    {
+      "name": "We Work Remotely"
+    }
+  ],
+  "sourceUrls": [
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=JavaScript&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=JavaScript&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=JavaScript&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=JavaScript&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=TypeScript&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=TypeScript&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=TypeScript&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=TypeScript&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Python&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Python&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Python&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Python&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Java&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Java&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Java&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Java&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=React&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=React&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=React&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=React&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Node.js&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Node.js&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Node.js&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Node.js&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Next.js&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Next.js&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Next.js&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Next.js&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Vue.js&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Vue.js&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Vue.js&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Vue.js&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Angular&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Angular&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Angular&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Angular&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Django&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Django&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Django&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Django&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Flask&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Flask&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Flask&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=United+States&techStack=Flask&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "US"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=JavaScript&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=JavaScript&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=JavaScript&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=JavaScript&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=TypeScript&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=TypeScript&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=TypeScript&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=TypeScript&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Python&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Python&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Python&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Python&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=React&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=React&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=React&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=React&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Node.js&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Node.js&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Node.js&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Node.js&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Next.js&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Next.js&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Next.js&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Next.js&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Vue.js&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Vue.js&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Vue.js&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Vue.js&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Django&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Django&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Django&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Django&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Flask&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Flask&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Flask&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Flask&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Ruby+on+Rails&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Ruby+on+Rails&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Ruby+on+Rails&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Europe&techStack=Ruby+on+Rails&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "EU"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=JavaScript&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=JavaScript&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=JavaScript&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=JavaScript&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=TypeScript&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=TypeScript&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=TypeScript&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=TypeScript&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Python&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Python&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Python&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Python&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=React&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=React&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=React&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=React&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Node.js&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Node.js&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Node.js&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Node.js&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Next.js&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Next.js&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Next.js&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Next.js&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Vue.js&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Vue.js&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Vue.js&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Vue.js&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Django&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Django&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Django&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Django&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Flask&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Flask&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Flask&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Flask&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Ruby+on+Rails&jobTitle=Full-stack+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Ruby+on+Rails&jobTitle=Frontend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Ruby+on+Rails&jobTitle=Backend+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://www.remoterocketship.com/?page=1&sort=DateAdded&locations=Worldwide&techStack=Ruby+on+Rails&jobTitle=Software+Engineer",
+      "source": "Remote Rocketship",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/senior-software-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/sr.-software-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/senior-backend-software-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/senior-software-development-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/senior-fullstack-software-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/developer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/full-stack-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/front-end-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/software-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/back-end-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/web-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/web-application-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/api-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/website-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-states/cloud-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "US"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-kingdom/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-kingdom/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/united-kingdom/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/germany/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/germany/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/germany/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/poland/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/poland/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/poland/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/spain/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/spain/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/spain/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/france/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/france/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/france/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/portugal/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/portugal/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/portugal/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/netherlands/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/netherlands/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/netherlands/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/ireland/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/ireland/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/ireland/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/romania/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/romania/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/romania/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/italy/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/italy/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/italy/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/hungary/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/hungary/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/hungary/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/switzerland/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/switzerland/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/switzerland/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/sweden/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/sweden/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/sweden/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/greece/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/greece/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/greece/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/belgium/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/belgium/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/belgium/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/turkey/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/turkey/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/turkey/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/bulgaria/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/bulgaria/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/bulgaria/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/austria/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/austria/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/austria/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/serbia/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/serbia/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/serbia/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/denmark/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/denmark/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/denmark/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/estonia/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/estonia/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/estonia/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/finland/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/finland/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/finland/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/slovakia/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/slovakia/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/slovakia/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/slovenia/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/slovenia/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/slovenia/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/croatia/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/croatia/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/croatia/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/lithuania/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/lithuania/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/lithuania/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/norway/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/norway/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/norway/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/cyprus/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/cyprus/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/cyprus/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/georgia/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/georgia/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/georgia/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/malta/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/malta/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/malta/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/armenia/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/armenia/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/armenia/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/latvia/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/latvia/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/latvia/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/north-macedonia/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/north-macedonia/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/north-macedonia/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/luxembourg/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/luxembourg/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/luxembourg/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/albania/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/albania/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/albania/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/iceland/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/iceland/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/iceland/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/bahrain/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/bahrain/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/bahrain/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/moldova/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/moldova/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/moldova/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/monaco/javascript?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/monaco/python?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/countries/monaco/ruby?sort=recent",
+      "source": "Himalayas",
+      "country": "EU"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/senior-software-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/sr.-software-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/senior-backend-software-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/senior-software-development-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/senior-fullstack-software-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/developer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/full-stack-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/front-end-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/software-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/back-end-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/web-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/web-application-engineer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/api-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/website-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://himalayas.app/jobs/worldwide/cloud-developer?sort=recent",
+      "source": "Himalayas",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://weworkremotely.com/remote-jobs.rss",
+      "source": "We Work Remotely",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=backend%20engineer&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=frontend%20engineer&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=full%20stack%20engineer&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=software%20engineer&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=devops&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=site%20reliability&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=data%20engineer&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=machine%20learning&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=python&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=typescript&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=java&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=golang&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=node&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=react&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=mobile&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=qa&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?search=security&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?category=software-dev&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remotive.com/api/remote-jobs?category=devops&limit=200",
+      "source": "Remotive",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=javascript",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=typescript",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=python",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=java",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=golang",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=node",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=react",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=devops",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=data",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=security",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=qa",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=mobile",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=ruby",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=php",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=dotnet",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=rust",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=kubernetes",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://remoteok.com/api?tag=aws",
+      "source": "RemoteOK",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+      "source": "We Work Remotely",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss",
+      "source": "We Work Remotely",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://weworkremotely.com/categories/remote-design-jobs.rss",
+      "source": "We Work Remotely",
+      "country": "WorldWide"
+    },
+    {
+      "url": "https://weworkremotely.com/categories/remote-customer-support-jobs.rss",
+      "source": "We Work Remotely",
+      "country": "WorldWide"
+    }
+  ]
+}

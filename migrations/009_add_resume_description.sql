@@ -1,0 +1,2 @@
+ALTER TABLE IF EXISTS resumes
+  ADD COLUMN IF NOT EXISTS resume_description TEXT;
