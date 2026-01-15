@@ -7,7 +7,8 @@ const defaultCorsOrigins = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:3300',
   'http://127.0.0.1:4000',
-  'http://38.79.97.159:3000'
+  'https://64.71.179.10',
+  'https://64.71.179.10:3000',
 ];
 
 const corsEnv = (process.env.CORS_ORIGINS || '').trim();
