@@ -1389,7 +1389,7 @@ export async function deleteUserOAuthAccount(
     `,
     [accountId, userId],
   );
-  return rowCount > 0;
+  return (rowCount ?? 0) > 0;
 }
 
 export async function updateUserOAuthAccountTokens(

@@ -997,7 +997,7 @@ async function collectPageFieldsFromFrame(
         const candidates = container.querySelectorAll(
           "h1,h2,h3,h4,h5,h6,p,.help,.hint,.description,[data-help],[data-testid*='help']"
         );
-        candidates.forEach((n) => {
+        candidates.forEach((n: Element) => {
           const t = textOf(n);
           if (t && t.length <= 350)
             prompts.push({ source: "container_text", text: t });
@@ -1115,7 +1115,7 @@ async function collectPageFieldsFromFrame(
       ).slice(0, 80);
 
       const fields: any[] = [];
-      controls.forEach((el, idx) => {
+      controls.forEach((el: Element, idx) => {
         const tag = el.tagName.toLowerCase();
         if (tag === "input") {
           const t = (
@@ -2146,7 +2146,7 @@ async function bootstrap() {
         const candidates = body ? Array.from(body.children) : [];
         let target: Element = body || doc;
         let bestArea = 0;
-        for (const el of candidates) {
+        for (const el of candidates as Element[]) {
           const rect = el.getBoundingClientRect();
           const area = rect.width * rect.height;
           if (area > bestArea) {
@@ -3005,7 +3005,7 @@ async function bootstrap() {
     }
 
     // Get the redirect URI that was used (without query parameters - Azure AD doesn't allow them)
-    const protocol = request.headers['x-forwarded-proto'] || (request.socket?.encrypted ? 'https' : 'http') || 'http';
+    const protocol = request.headers['x-forwarded-proto'] || (request.socket && 'encrypted' in request.socket && (request.socket as any).encrypted ? 'https' : 'http') || 'http';
     const host = request.headers.host || `localhost:${config.PORT}`;
     const callbackRedirectUri = `${protocol}://${host}/calendar/oauth/callback`;
 
@@ -3046,13 +3046,13 @@ async function bootstrap() {
       );
 
       if (!tokenRes.ok) {
-        const errorData = await tokenRes.json().catch(() => ({}));
+        const errorData = (await tokenRes.json().catch(() => ({}))) as { error_description?: string };
         throw new Error(
           errorData.error_description || "Failed to exchange authorization code"
         );
       }
 
-      tokenData = await tokenRes.json();
+      tokenData = await tokenRes.json() as { access_token?: string; refresh_token?: string; expires_in?: number; id_token?: string };
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to exchange authorization code";
@@ -3146,7 +3146,7 @@ async function bootstrap() {
       try {
         const token = authHeader.substring(7);
         const decoded = verifyToken(token);
-        userId = decoded.userId;
+        userId = decoded.sub;
       } catch {
         // Token invalid, will redirect to frontend with tokens
       }
