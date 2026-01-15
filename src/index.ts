@@ -68,6 +68,7 @@ import {
   touchProfileAccount,
   replaceCalendarEvents,
   listCalendarEventsForOwner,
+  getMailboxIdFromEmail,
   upsertUserOAuthAccount,
   listUserOAuthAccounts,
   deleteUserOAuthAccount,
@@ -3360,6 +3361,11 @@ async function bootstrap() {
       return reply.status(403).send({ message: "Only admins can sync from Graph API" });
     }
 
+    // Helper function to load accounts for both admin and users
+    const loadAccountsForUser = async (userId: string) => {
+      return await listUserOAuthAccounts(userId, "azure-ad");
+    };
+
     // Try to get cached events first if preferred
     if (preferStored) {
       let ownerUserId = actor.id;
@@ -3371,34 +3377,84 @@ async function bootstrap() {
           ownerUserId = rows[0].id;
         }
       }
+
+      // Convert mailbox email params to mailboxIds if provided
+      let mailboxIds: string[] | undefined = undefined;
+      if (mailboxParams.length > 0) {
+        const accountMap = new Map<string, string>(); // email -> id
+        const ownerAccounts = await loadAccountsForUser(ownerUserId);
+        ownerAccounts.forEach((acc) => {
+          accountMap.set(acc.email.toLowerCase(), acc.id);
+        });
+        
+        // For non-admin users, also check admin's accounts
+        if (actor.role !== "ADMIN" && ownerUserId !== actor.id) {
+          const adminAccounts = await loadAccountsForUser(ownerUserId);
+          adminAccounts.forEach((acc) => {
+            accountMap.set(acc.email.toLowerCase(), acc.id);
+          });
+        }
+
+        mailboxIds = mailboxParams
+          .map((email) => accountMap.get(email))
+          .filter((id): id is string => id !== undefined);
+      }
+
       const cachedEvents = await listCalendarEventsForOwner(
         ownerUserId,
-        mailboxParams.length ? mailboxParams : undefined,
+        mailboxIds,
         { start, end },
       );
       
-      // For non-admin users, always return database results (even if empty)
-      // For admin users, only return if we have cached events
-      if (cachedEvents.length > 0 || actor.role !== "ADMIN") {
-        const accounts = await listUserOAuthAccounts(actor.id, "azure-ad");
-        const accountMap = new Map<string, { email: string; name?: string; accountId: string; isPrimary?: boolean }>();
-        accounts.forEach((acc) => {
-          accountMap.set(acc.email.toLowerCase(), {
+      // Always load accounts from user_oauth_accounts
+      const actorAccounts = await loadAccountsForUser(actor.id);
+      let allAccounts = [...actorAccounts];
+      
+      // For non-admin users, also load admin's accounts
+      if (actor.role !== "ADMIN" && ownerUserId !== actor.id) {
+        const adminAccounts = await loadAccountsForUser(ownerUserId);
+        allAccounts = [...allAccounts, ...adminAccounts];
+      }
+
+      // Build account map with IDs
+      const accountMap = new Map<string, { id: string; email: string; name?: string; accountId: string; isPrimary?: boolean }>();
+      allAccounts.forEach((acc) => {
+        const key = acc.email.toLowerCase();
+        if (!accountMap.has(key)) {
+          accountMap.set(key, {
+            id: acc.id,  // mailbox_id
             email: acc.email,
             name: acc.displayName ?? undefined,
             accountId: acc.id,
             isPrimary: false,
           });
-        });
-        cachedEvents.forEach((ev) => {
+        }
+      });
+
+      // Add accounts from cached events that might not be in user_oauth_accounts
+      cachedEvents.forEach((ev) => {
+        if (ev.mailbox) {
           const mailbox = ev.mailbox.toLowerCase();
-          if (!accountMap.has(mailbox)) {
-            accountMap.set(mailbox, { email: ev.mailbox, accountId: "", isPrimary: false });
+          if (!accountMap.has(mailbox) && ev.mailboxId) {
+            accountMap.set(mailbox, {
+              id: ev.mailboxId,
+              email: ev.mailbox,
+              accountId: ev.mailboxId,
+              isPrimary: false,
+            });
           }
-        });
+        }
+      });
+
+      // For non-admin users, always return database results (even if empty)
+      // For admin users, only return if we have cached events
+      if (cachedEvents.length > 0 || actor.role !== "ADMIN") {
         return {
           accounts: Array.from(accountMap.values()).sort((a, b) => a.email.localeCompare(b.email)),
-          events: cachedEvents,
+          events: cachedEvents.map((ev) => ({
+            ...ev,
+            mailboxId: ev.mailboxId || undefined,
+          })),
           source: "db",
           failedMailboxes: [],
         };
@@ -3467,10 +3523,12 @@ async function bootstrap() {
             status: "success" as const,
             mailbox: account.email.toLowerCase(),
             accountId: account.id,
+            mailboxId: account.id,  // Add mailboxId
             name: displayName,
             events: events.map((ev) => ({
               ...ev,
               mailbox: account.email.toLowerCase(),
+              mailboxId: account.id,  // Add mailboxId to events
             })),
           };
         } catch (err) {
@@ -3488,8 +3546,9 @@ async function bootstrap() {
       status: "success";
       mailbox: string;
       accountId: string;
+      mailboxId: string;
       name?: string;
-      events: Array<CalendarEvent & { mailbox: string }>;
+      events: Array<CalendarEvent & { mailbox: string; mailboxId: string }>;
     }>;
 
     const failedAccounts = accountResults.filter((r) => r.status === "error") as Array<{
@@ -3503,7 +3562,7 @@ async function bootstrap() {
     // Handle shared mailboxes
     const connectedMailboxSet = new Set(successfulAccounts.map((r) => r.mailbox));
     const sharedMailboxes = mailboxParams.filter((m) => !connectedMailboxSet.has(m));
-    const sharedResults: Array<{ mailbox: string; events?: CalendarEvent[]; error?: string }> = [];
+    const sharedResults: Array<{ mailbox: string; mailboxId?: string; events?: CalendarEvent[]; error?: string }> = [];
 
     if (sharedMailboxes.length > 0 && accounts.length > 0) {
       // Use first account's token for shared mailbox access
@@ -3522,9 +3581,16 @@ async function bootstrap() {
             if (warning) {
               sharedResults.push({ mailbox, error: warning });
             } else {
+              // Try to find mailbox_id for shared mailbox
+              const sharedMailboxId = await getMailboxIdFromEmail(actor.id, mailbox, actor.role === "ADMIN");
               sharedResults.push({
                 mailbox,
-                events: events.map((ev) => ({ ...ev, mailbox })),
+                mailboxId: sharedMailboxId || undefined,
+                events: events.map((ev) => ({
+                  ...ev,
+                  mailbox,
+                  mailboxId: sharedMailboxId || undefined,
+                })),
               });
             }
           } catch (err) {
@@ -3539,7 +3605,8 @@ async function bootstrap() {
 
     const successfulShared = sharedResults.filter((r) => r.events) as Array<{
       mailbox: string;
-      events: Array<CalendarEvent & { mailbox: string }>;
+      mailboxId?: string;
+      events: Array<CalendarEvent & { mailbox: string; mailboxId?: string }>;
     }>;
     const failedShared = sharedResults.filter((r) => r.error) as Array<{
       mailbox: string;
@@ -3553,6 +3620,7 @@ async function bootstrap() {
 
     const accountsList = [
       ...successfulAccounts.map((r) => ({
+        id: r.mailboxId,  // Add id (mailbox_id)
         email: r.mailbox,
         name: r.name,
         accountId: r.accountId,
@@ -3560,8 +3628,9 @@ async function bootstrap() {
         timezone: tz,
       })),
       ...successfulShared.map((r) => ({
+        id: r.mailboxId || "",  // Add id (mailbox_id)
         email: r.mailbox,
-        accountId: "",
+        accountId: r.mailboxId || "",
         isPrimary: false,
         timezone: tz,
       })),
@@ -3573,42 +3642,118 @@ async function bootstrap() {
     ];
 
     // When admin syncs from Graph API, save events to database
+    console.log('[CALENDAR SYNC] Checking save conditions:', {
+      source,
+      isAdmin: actor.role === "ADMIN",
+      eventCount: allEvents.length,
+      conditionMet: source === "graph" && actor.role === "ADMIN" && allEvents.length > 0
+    });
+
     if (source === "graph" && actor.role === "ADMIN" && allEvents.length > 0) {
       try {
-        // Get all unique mailboxes from events
-        const eventMailboxes = Array.from(
-          new Set(allEvents.map((ev) => ev.mailbox.toLowerCase()))
-        );
-        
-        // Save events to database for the admin user
-        await replaceCalendarEvents({
-          ownerUserId: actor.id,
-          mailboxes: eventMailboxes,
-          timezone: tz,
-          events: allEvents.map((ev) => ({
-            id: ev.id,
-            mailbox: ev.mailbox,
-            title: ev.title,
-            start: ev.start,
-            end: ev.end,
-            isAllDay: ev.isAllDay,
-            organizer: ev.organizer,
-            location: ev.location,
-          })),
-        });
+        console.log('[CALENDAR SYNC] Starting save process...');
+        // Debug: Log event structure to verify mailboxId is set
+        const sampleEvent = allEvents[0] ? {
+          id: allEvents[0].id,
+          title: allEvents[0].title,
+          mailboxId: (allEvents[0] as any).mailboxId,
+          mailbox: (allEvents[0] as any).mailbox,
+        } : null;
+        console.log('[CALENDAR SYNC] Sample event:', sampleEvent);
+        request.log.debug({ 
+          totalEvents: allEvents.length,
+          sampleEvent
+        }, "Events before filtering for save");
+
+        // Filter events that have mailboxId and map them for saving
+        const eventsToSave = allEvents
+          .map((ev) => {
+            const mailboxId = (ev as any).mailboxId;
+            if (!mailboxId) {
+              request.log.warn({ eventId: ev.id, eventTitle: ev.title }, "Event missing mailboxId, skipping save");
+              return null;
+            }
+            return {
+              id: ev.id,
+              mailboxId: mailboxId,
+              title: ev.title,
+              start: ev.start,
+              end: ev.end,
+              isAllDay: ev.isAllDay,
+              organizer: ev.organizer,
+              location: ev.location,
+            };
+          })
+          .filter((ev): ev is NonNullable<typeof ev> => ev !== null);
+
+        if (eventsToSave.length === 0) {
+          console.warn('[CALENDAR SYNC] No events with valid mailboxId to save. Total events:', allEvents.length);
+          request.log.warn("No events with valid mailboxId to save");
+        } else {
+          // Get all unique mailboxIds from events that will be saved
+          const eventMailboxIds = Array.from(
+            new Set(eventsToSave.map((ev) => ev.mailboxId))
+          );
+          
+          console.log('[CALENDAR SYNC] Saving to database:', {
+            eventCount: eventsToSave.length,
+            mailboxIds: eventMailboxIds,
+            ownerUserId: actor.id,
+            timezone: tz
+          });
+          
+          request.log.info({ 
+            eventCount: eventsToSave.length, 
+            mailboxIds: eventMailboxIds,
+            ownerUserId: actor.id 
+          }, "Saving calendar events to database");
+
+          // Save events to database for the admin user
+          console.log('[CALENDAR SYNC] Calling replaceCalendarEvents...');
+          await replaceCalendarEvents({
+            ownerUserId: actor.id,
+            mailboxIds: eventMailboxIds,
+            timezone: tz,
+            events: eventsToSave,
+          });
+
+          console.log('[CALENDAR SYNC] Successfully saved', eventsToSave.length, 'events to database');
+          request.log.info({ eventCount: eventsToSave.length }, "Successfully saved calendar events to database");
+        }
       } catch (err) {
         // Log error but don't fail the request - still return the events
-        request.log.error({ err }, "Failed to save calendar events to database");
+        console.error('[CALENDAR SYNC] ERROR saving events:', err);
+        request.log.error({ err, eventCount: allEvents.length }, "Failed to save calendar events to database");
+      }
+    } else {
+      console.log('[CALENDAR SYNC] Save skipped - conditions not met:', {
+        source,
+        isAdmin: actor.role === "ADMIN",
+        eventCount: allEvents.length
+      });
+    }
+
+    // Check if save was attempted and add warning if no events were saved
+    let saveWarning: string | undefined = undefined;
+    if (source === "graph" && actor.role === "ADMIN" && allEvents.length > 0) {
+      const eventsWithMailboxId = allEvents.filter((ev) => (ev as any).mailboxId);
+      if (eventsWithMailboxId.length === 0) {
+        saveWarning = "No events were saved to database (all events missing mailboxId)";
+      } else if (eventsWithMailboxId.length < allEvents.length) {
+        saveWarning = `${allEvents.length - eventsWithMailboxId.length} events were not saved (missing mailboxId)`;
       }
     }
 
     return {
       accounts: accountsList,
-      events: allEvents,
+      events: allEvents.map((ev) => ({
+        ...ev,
+        mailboxId: (ev as any).mailboxId || undefined,
+      })),
       source: "graph",
-      warning: failedMailboxes.length
+      warning: saveWarning || (failedMailboxes.length
         ? `Failed to load calendars for: ${failedMailboxes.join(", ")}.`
-        : undefined,
+        : undefined),
       failedMailboxes,
     };
   });

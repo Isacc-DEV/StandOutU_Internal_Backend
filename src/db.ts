@@ -41,7 +41,8 @@ import { config } from './config';
 
 type CalendarEventInput = {
   id: string;
-  mailbox: string;
+  mailboxId: string;  // Changed from mailbox: string
+  mailbox?: string;  // Keep for backward compatibility during transition
   title?: string;
   start: string;
   end: string;
@@ -52,7 +53,8 @@ type CalendarEventInput = {
 
 type StoredCalendarEvent = {
   id: string;
-  mailbox: string;
+  mailboxId: string | null;  // Changed from mailbox: string
+  mailbox?: string;  // Keep for backward compatibility during transition
   title: string;
   start: string;
   end: string;
@@ -465,7 +467,8 @@ export async function initDb() {
       CREATE TABLE IF NOT EXISTS calendar_events (
         id UUID PRIMARY KEY,
         owner_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-        mailbox TEXT NOT NULL,
+        mailbox TEXT,
+        mailbox_id UUID REFERENCES user_oauth_accounts(id) ON DELETE SET NULL,
         provider TEXT NOT NULL DEFAULT 'MICROSOFT',
         provider_event_id TEXT NOT NULL,
         title TEXT,
@@ -624,6 +627,76 @@ export async function initDb() {
         UPDATE daily_reports SET status = 'rejected' WHERE status = 'failed';
       `,
     );
+
+    // Migration 019: Add mailbox_id to calendar_events
+    await client.query(
+      `
+        -- Add mailbox_id column to calendar_events table
+        ALTER TABLE IF EXISTS calendar_events
+          ADD COLUMN IF NOT EXISTS mailbox_id UUID;
+
+        -- Make mailbox column nullable (since we're using mailbox_id now)
+        DO $$
+        BEGIN
+          -- Check if mailbox column has NOT NULL constraint
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'calendar_events' 
+            AND column_name = 'mailbox' 
+            AND is_nullable = 'NO'
+          ) THEN
+            ALTER TABLE calendar_events ALTER COLUMN mailbox DROP NOT NULL;
+          END IF;
+        END $$;
+
+        -- Add foreign key constraint (drop first if exists to avoid errors)
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM information_schema.table_constraints 
+            WHERE constraint_name = 'fk_calendar_events_mailbox_id' 
+            AND table_name = 'calendar_events'
+          ) THEN
+            ALTER TABLE calendar_events DROP CONSTRAINT fk_calendar_events_mailbox_id;
+          END IF;
+        END $$;
+
+        -- Add constraint if it doesn't exist
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.table_constraints 
+            WHERE constraint_name = 'fk_calendar_events_mailbox_id' 
+            AND table_name = 'calendar_events'
+          ) THEN
+            ALTER TABLE calendar_events
+              ADD CONSTRAINT fk_calendar_events_mailbox_id
+              FOREIGN KEY (mailbox_id) REFERENCES user_oauth_accounts(id) ON DELETE SET NULL;
+          END IF;
+        END $$;
+
+        -- Migrate existing data: Match mailbox email to user_oauth_accounts.email and set mailbox_id
+        UPDATE calendar_events ce
+        SET mailbox_id = (
+          SELECT uoa.id
+          FROM user_oauth_accounts uoa
+          WHERE LOWER(uoa.email) = LOWER(ce.mailbox)
+          LIMIT 1
+        )
+        WHERE mailbox_id IS NULL;
+
+        -- Add index for mailbox_id
+        CREATE INDEX IF NOT EXISTS idx_calendar_events_mailbox_id ON calendar_events(mailbox_id);
+
+        -- Update existing index to include mailbox_id for better query performance
+        DROP INDEX IF EXISTS idx_calendar_events_owner_mailbox;
+        CREATE INDEX IF NOT EXISTS idx_calendar_events_owner_mailbox ON calendar_events(owner_user_id, mailbox_id);
+
+        -- Add index for owner_user_id and mailbox_id together for filtering
+        CREATE INDEX IF NOT EXISTS idx_calendar_events_owner_mailbox_id ON calendar_events(owner_user_id, mailbox_id);
+      `,
+    );
+
     console.log('✅ [DB] Additional indexes and data migrations applied');
 
     console.log('\n🌱 [DB] Seeding initial data...');
@@ -1079,69 +1152,128 @@ export async function touchProfileAccount(id: string, lastSyncAt?: string) {
 }
 
 
+/**
+ * Get mailbox_id (user_oauth_accounts.id) from email address
+ * For non-admin users, also checks admin's accounts
+ */
+export async function getMailboxIdFromEmail(
+  ownerUserId: string,
+  email: string,
+  isAdmin: boolean = false,
+): Promise<string | null> {
+  // First try to find in owner's accounts
+  const { rows: ownerRows } = await pool.query<{ id: string }>(
+    `
+      SELECT id
+      FROM user_oauth_accounts
+      WHERE user_id = $1 AND LOWER(email) = LOWER($2)
+      LIMIT 1
+    `,
+    [ownerUserId, email],
+  );
+
+  if (ownerRows.length > 0) {
+    return ownerRows[0].id;
+  }
+
+  // For non-admin users, also check admin's accounts
+  if (!isAdmin) {
+    const { rows: adminRows } = await pool.query<{ id: string; user_id: string }>(
+      `
+        SELECT uoa.id, uoa.user_id
+        FROM user_oauth_accounts uoa
+        INNER JOIN users u ON u.id = uoa.user_id
+        WHERE u.role = 'ADMIN' AND LOWER(uoa.email) = LOWER($1)
+        ORDER BY u.created_at ASC
+        LIMIT 1
+      `,
+      [email],
+    );
+
+    if (adminRows.length > 0) {
+      return adminRows[0].id;
+    }
+  }
+
+  return null;
+}
+
 export async function listCalendarEventsForOwner(
   ownerUserId: string,
-  mailboxes?: string[],
+  mailboxIds?: string[],
   range?: { start?: string | null; end?: string | null },
 ): Promise<StoredCalendarEvent[]> {
-  const { rows } = await pool.query<StoredCalendarEvent>(
+  const { rows } = await pool.query<StoredCalendarEvent & { mailbox_email: string | null }>(
     `
       SELECT
-        provider_event_id AS id,
-        mailbox,
-        title,
-        start_at AS "start",
-        end_at AS "end",
-        is_all_day AS "isAllDay",
-        organizer,
-        location,
-        timezone
-      FROM calendar_events
-      WHERE owner_user_id = $1
-        AND ($2::text[] IS NULL OR mailbox = ANY($2))
-        AND ($3::text IS NULL OR end_at >= $3)
-        AND ($4::text IS NULL OR start_at <= $4)
-      ORDER BY start_at ASC
+        ce.provider_event_id AS id,
+        ce.mailbox_id AS "mailboxId",
+        COALESCE(uoa.email, ce.mailbox) AS mailbox,
+        ce.title,
+        ce.start_at AS "start",
+        ce.end_at AS "end",
+        ce.is_all_day AS "isAllDay",
+        ce.organizer,
+        ce.location,
+        ce.timezone
+      FROM calendar_events ce
+      LEFT JOIN user_oauth_accounts uoa ON ce.mailbox_id = uoa.id
+      WHERE ce.owner_user_id = $1
+        AND ($2::uuid[] IS NULL OR ce.mailbox_id = ANY($2))
+        AND ($3::text IS NULL OR ce.end_at >= $3)
+        AND ($4::text IS NULL OR ce.start_at <= $4)
+      ORDER BY ce.start_at ASC
     `,
     [
       ownerUserId,
-      mailboxes && mailboxes.length ? mailboxes : null,
+      mailboxIds && mailboxIds.length ? mailboxIds : null,
       range?.start ?? null,
       range?.end ?? null,
     ],
   );
-  return rows;
+  return rows.map(row => ({
+    ...row,
+    mailbox: row.mailbox || undefined,  // Convert null to undefined for compatibility
+  }));
 }
 
 export async function replaceCalendarEvents(params: {
   ownerUserId: string;
-  mailboxes: string[];
+  mailboxIds: string[];
   timezone?: string | null;
   events: CalendarEventInput[];
 }): Promise<StoredCalendarEvent[]> {
-  const { ownerUserId, mailboxes, timezone, events } = params;
+  const { ownerUserId, mailboxIds, timezone, events } = params;
+  console.log('[replaceCalendarEvents] Called with:', {
+    ownerUserId,
+    mailboxIds: mailboxIds.length,
+    eventCount: events.length,
+    timezone
+  });
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    if (mailboxes.length) {
+    if (mailboxIds.length) {
+      console.log('[replaceCalendarEvents] Deleting existing events for mailboxIds:', mailboxIds);
       await client.query(
-        'DELETE FROM calendar_events WHERE owner_user_id = $1 AND mailbox = ANY($2)',
-        [ownerUserId, mailboxes],
+        'DELETE FROM calendar_events WHERE owner_user_id = $1 AND mailbox_id = ANY($2)',
+        [ownerUserId, mailboxIds],
       );
     }
     if (events.length) {
+      console.log('[replaceCalendarEvents] Inserting', events.length, 'events');
       const values: string[] = [];
       const args: Array<string | boolean | null> = [];
       let idx = 1;
       for (const event of events) {
-        if (!event.mailbox) continue;
+        if (!event.mailboxId) continue;
         values.push(
           `($${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++})`,
         );
         args.push(
           randomUUID(),
           ownerUserId,
-          event.mailbox,
+          event.mailboxId,
           'MICROSOFT',
           event.id,
           event.title ?? null,
@@ -1154,12 +1286,13 @@ export async function replaceCalendarEvents(params: {
         );
       }
       if (values.length) {
-        await client.query(
+        console.log('[replaceCalendarEvents] Executing INSERT with', values.length, 'events');
+        const result = await client.query(
           `
             INSERT INTO calendar_events (
               id,
               owner_user_id,
-              mailbox,
+              mailbox_id,
               provider,
               provider_event_id,
               title,
@@ -1174,17 +1307,25 @@ export async function replaceCalendarEvents(params: {
           `,
           args,
         );
+        console.log('[replaceCalendarEvents] INSERT successful, rows affected:', result.rowCount);
+      } else {
+        console.warn('[replaceCalendarEvents] No values to insert - all events were filtered out');
       }
     }
     await client.query('COMMIT');
+    console.log('[replaceCalendarEvents] Transaction COMMITTED');
   } catch (err) {
+    console.error('[replaceCalendarEvents] ERROR in transaction:', err);
     await client.query('ROLLBACK');
     throw err;
   } finally {
     client.release();
   }
 
-  return listCalendarEventsForOwner(ownerUserId, mailboxes);
+  console.log('[replaceCalendarEvents] Fetching saved events...');
+  const saved = await listCalendarEventsForOwner(ownerUserId, mailboxIds);
+  console.log('[replaceCalendarEvents] Retrieved', saved.length, 'events from database');
+  return saved;
 }
 
 export async function upsertUserOAuthAccount(params: {
