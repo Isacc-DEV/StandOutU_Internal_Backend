@@ -3900,6 +3900,17 @@ async function bootstrap() {
     if (body.attachments?.length) {
       await insertDailyReportAttachments(updated.id, body.attachments);
     }
+    // Notify admins only when a report is sent
+    try {
+      const reportDate = formatShortDate(body.date);
+      await notifyAdmins({
+        kind: "report",
+        message: `${actor.userName} sent ${reportDate} report.`,
+        href: "/admin/reports",
+      });
+    } catch (err) {
+      request.log.error({ err }, "report send notification failed");
+    }
     return updated;
   });
 
