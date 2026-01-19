@@ -88,6 +88,11 @@ import {
   updateResumeTemplate,
   deleteResumeTemplate,
   listApplications,
+  updateApplicationReview,
+  insertApplicationWithSummary,
+  listApplicationsForBidder,
+  findApplicationById,
+  updateApplicationStatus,
   listAssignments,
   listBidderSummaries,
   listCommunityChannels,
@@ -5355,6 +5360,10 @@ ${body.question}`;
         url: session.url ?? "",
         domain: session.domain ?? tryExtractDomain(session.url ?? ""),
         createdAt: new Date().toISOString(),
+        status: "in_review",
+        isReviewed: false,
+        reviewedAt: null,
+        reviewedBy: null,
       };
       await insertApplication(record);
     } catch (err) {
@@ -5808,13 +5817,116 @@ ${body.question}`;
   app.get("/manager/applications", async (request, reply) => {
     if (forbidObserver(reply, request.authUser)) return;
     const actor = request.authUser;
+    if (
+      !actor ||
+      (actor.role !== "MANAGER" && actor.role !== "ADMIN" && actor.role !== "BIDDER")
+    ) {
+      return reply
+        .status(403)
+        .send({ message: "Only managers, admins, or bidders can view applications" });
+    }
+    const rows =
+      actor.role === "BIDDER" ? await listApplicationsForBidder(actor.id) : await listApplications();
+    return rows;
+  });
+
+  app.post("/manager/applications", async (request, reply) => {
+    if (forbidObserver(reply, request.authUser)) return;
+    const actor = request.authUser;
+    if (
+      !actor ||
+      (actor.role !== "MANAGER" && actor.role !== "ADMIN" && actor.role !== "BIDDER")
+    ) {
+      return reply
+        .status(403)
+        .send({ message: "Only managers, admins, or bidders can create applications" });
+    }
+    const schema = z.object({
+      profileId: z.string().uuid(),
+      url: z.string().trim().optional(),
+      resumeId: z.string().uuid().optional().nullable(),
+    });
+    const parsed = schema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ message: "Invalid request body" });
+    }
+    const { profileId, url, resumeId } = parsed.data;
+    const profile = await findProfileById(profileId);
+    if (!profile) return reply.status(404).send({ message: "Profile not found" });
+    if (!profile.assignedBidderId) {
+      return reply
+        .status(400)
+        .send({ message: "Profile must be assigned to a bidder before logging applications" });
+    }
+    if (actor.role === "BIDDER" && profile.assignedBidderId !== actor.id) {
+      return reply.status(403).send({ message: "Cannot log applications for other bidders" });
+    }
+    const record: ApplicationRecord = {
+      id: randomUUID(),
+      sessionId: randomUUID(),
+      bidderUserId: profile.assignedBidderId,
+      profileId,
+      resumeId: resumeId ?? null,
+      url: url?.trim() || "",
+      domain: tryExtractDomain(url ?? ""),
+      createdAt: new Date().toISOString(),
+      status: "in_review",
+      isReviewed: false,
+      reviewedAt: null,
+      reviewedBy: null,
+    };
+    const created = await insertApplicationWithSummary(record);
+    return created;
+  });
+
+  app.patch("/manager/applications/:id/review", async (request, reply) => {
+    if (forbidObserver(reply, request.authUser)) return;
+    const actor = request.authUser;
     if (!actor || (actor.role !== "MANAGER" && actor.role !== "ADMIN")) {
       return reply
         .status(403)
-        .send({ message: "Only managers or admins can view applications" });
+        .send({ message: "Only managers or admins can update applications" });
     }
-    const rows = await listApplications();
-    return rows;
+    const { id } = request.params as { id: string };
+    const schema = z.object({ isReviewed: z.boolean() });
+    const parsed = schema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ message: "Invalid request body" });
+    }
+    const updated = await updateApplicationReview({
+      id,
+      isReviewed: parsed.data.isReviewed,
+      reviewerId: actor.id,
+    });
+    if (!updated) {
+      return reply.status(404).send({ message: "Application not found" });
+    }
+    return updated;
+  });
+
+  app.patch("/manager/applications/:id/status", async (request, reply) => {
+    if (forbidObserver(reply, request.authUser)) return;
+    const actor = request.authUser;
+    if (!actor || (actor.role !== "MANAGER" && actor.role !== "ADMIN" && actor.role !== "BIDDER")) {
+      return reply
+        .status(403)
+        .send({ message: "Only managers, admins, or bidders can update applications" });
+    }
+    const { id } = request.params as { id: string };
+    const schema = z.object({ status: z.enum(["in_review", "accepted", "rejected"]) });
+    const parsed = schema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ message: "Invalid request body" });
+    }
+    const current = await findApplicationById(id);
+    if (!current) {
+      return reply.status(404).send({ message: "Application not found" });
+    }
+    if (actor.role === "BIDDER" && current.bidderUserId && current.bidderUserId !== actor.id) {
+      return reply.status(403).send({ message: "Cannot update applications for other bidders" });
+    }
+    const updated = await updateApplicationStatus({ id, status: parsed.data.status });
+    return updated;
   });
 
   // Community: Edit message

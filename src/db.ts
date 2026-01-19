@@ -195,6 +195,10 @@ export async function initDb() {
         resume_id UUID,
         url TEXT,
         domain TEXT,
+        status TEXT DEFAULT 'in_review',
+        is_reviewed BOOLEAN DEFAULT FALSE,
+        reviewed_by UUID REFERENCES users(id),
+        reviewed_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT NOW()
       );
 
@@ -423,6 +427,15 @@ export async function initDb() {
       ALTER TABLE IF EXISTS community_messages
         ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
 
+      ALTER TABLE IF EXISTS applications
+        ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'in_review',
+        ADD COLUMN IF NOT EXISTS is_reviewed BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES users(id),
+        ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP;
+
+      UPDATE applications SET status = COALESCE(status, 'in_review');
+      UPDATE applications SET is_reviewed = FALSE WHERE is_reviewed IS NULL;
+
       CREATE INDEX IF NOT EXISTS idx_profile_accounts_profile ON profile_accounts(profile_id);
       CREATE INDEX IF NOT EXISTS idx_profile_accounts_email ON profile_accounts(email);
       CREATE INDEX IF NOT EXISTS idx_profile_accounts_status ON profile_accounts(status);
@@ -435,6 +448,7 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_applications_profile ON applications(profile_id);
       CREATE INDEX IF NOT EXISTS idx_applications_created_at ON applications(created_at);
       CREATE INDEX IF NOT EXISTS idx_applications_domain ON applications(domain);
+      CREATE INDEX IF NOT EXISTS idx_applications_reviewed ON applications(is_reviewed, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(due_date);
       CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
       CREATE INDEX IF NOT EXISTS idx_tasks_created_by ON tasks(created_by);
@@ -948,9 +962,13 @@ export async function insertApplication(record: ApplicationRecord) {
         resume_id,
         url,
         domain,
-        created_at
+        status,
+        created_at,
+        is_reviewed,
+        reviewed_by,
+        reviewed_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       ON CONFLICT (session_id) DO NOTHING
     `,
     [
@@ -962,8 +980,26 @@ export async function insertApplication(record: ApplicationRecord) {
       record.url,
       record.domain ?? null,
       record.createdAt,
+      record.status ?? "in_review",
+      record.isReviewed ?? false,
+      record.reviewedBy ?? null,
+      record.reviewedAt ?? null,
     ],
   );
+}
+
+export async function insertApplicationWithSummary(
+  record: ApplicationRecord,
+): Promise<ApplicationSummary | undefined> {
+  await insertApplication(record);
+  const { rows } = await pool.query<ApplicationSummary>(
+    `
+      ${APPLICATION_SUMMARY_SELECT}
+      WHERE a.id = $1
+    `,
+    [record.id],
+  );
+  return rows[0];
 }
 
 export async function listProfiles(): Promise<Profile[]> {
@@ -3083,29 +3119,115 @@ export async function listBidderSummaries(): Promise<BidderSummary[]> {
   }));
 }
 
+const APPLICATION_SUMMARY_SELECT = `
+  SELECT
+    a.id,
+    a.session_id AS "sessionId",
+    a.bidder_user_id AS "bidderUserId",
+    u.user_name AS "bidderName",
+    u.email AS "bidderEmail",
+    a.profile_id AS "profileId",
+    p.display_name AS "profileDisplayName",
+    a.resume_id AS "resumeId",
+    NULL::text AS "resumeLabel",
+    a.url AS "url",
+    a.domain AS "domain",
+    a.status AS "status",
+    a.is_reviewed AS "isReviewed",
+    a.reviewed_at AS "reviewedAt",
+    a.reviewed_by AS "reviewedBy",
+    reviewer.user_name AS "reviewerName",
+    reviewer.email AS "reviewerEmail",
+    a.created_at AS "createdAt"
+  FROM applications a
+  LEFT JOIN users u ON u.id = a.bidder_user_id
+  LEFT JOIN profiles p ON p.id = a.profile_id
+  LEFT JOIN users reviewer ON reviewer.id = a.reviewed_by
+`;
+
 export async function listApplications(): Promise<ApplicationSummary[]> {
   const { rows } = await pool.query<ApplicationSummary>(
     `
-      SELECT
-        a.id,
-        a.session_id AS "sessionId",
-        a.bidder_user_id AS "bidderUserId",
-        u.user_name AS "bidderName",
-        u.email AS "bidderEmail",
-        a.profile_id AS "profileId",
-        p.display_name AS "profileDisplayName",
-        a.resume_id AS "resumeId",
-        NULL::text AS "resumeLabel",
-        a.url AS "url",
-        a.domain AS "domain",
-        a.created_at AS "createdAt"
-      FROM applications a
-      LEFT JOIN users u ON u.id = a.bidder_user_id
-      LEFT JOIN profiles p ON p.id = a.profile_id
+      ${APPLICATION_SUMMARY_SELECT}
       ORDER BY a.created_at DESC
     `,
   );
   return rows;
+}
+
+export async function updateApplicationReview(params: {
+  id: string;
+  isReviewed: boolean;
+  reviewerId: string;
+}): Promise<ApplicationSummary | undefined> {
+  const reviewedAt = params.isReviewed ? new Date().toISOString() : null;
+  const reviewedBy = params.isReviewed ? params.reviewerId : null;
+  await pool.query(
+    `
+      UPDATE applications
+      SET is_reviewed = $2,
+          reviewed_by = $3,
+          reviewed_at = $4
+      WHERE id = $1
+    `,
+    [params.id, params.isReviewed, reviewedBy, reviewedAt],
+  );
+  const { rows } = await pool.query<ApplicationSummary>(
+    `
+      ${APPLICATION_SUMMARY_SELECT}
+      WHERE a.id = $1
+      LIMIT 1
+    `,
+    [params.id],
+  );
+  return rows[0];
+}
+
+export async function listApplicationsForBidder(
+  bidderUserId: string,
+): Promise<ApplicationSummary[]> {
+  const { rows } = await pool.query<ApplicationSummary>(
+    `
+      ${APPLICATION_SUMMARY_SELECT}
+      WHERE a.bidder_user_id = $1
+      ORDER BY a.created_at DESC
+    `,
+    [bidderUserId],
+  );
+  return rows;
+}
+
+export async function findApplicationById(id: string): Promise<ApplicationSummary | undefined> {
+  const { rows } = await pool.query<ApplicationSummary>(
+    `
+      ${APPLICATION_SUMMARY_SELECT}
+      WHERE a.id = $1
+    `,
+    [id],
+  );
+  return rows[0];
+}
+
+export async function updateApplicationStatus(params: {
+  id: string;
+  status: "in_review" | "accepted" | "rejected";
+}): Promise<ApplicationSummary | undefined> {
+  await pool.query(
+    `
+      UPDATE applications
+      SET status = $2
+      WHERE id = $1
+    `,
+    [params.id, params.status],
+  );
+  const { rows } = await pool.query<ApplicationSummary>(
+    `
+      ${APPLICATION_SUMMARY_SELECT}
+      WHERE a.id = $1
+    `,
+    [params.id],
+  );
+  return rows[0];
 }
 
 export async function listLabelAliases(): Promise<LabelAlias[]> {
@@ -3913,4 +4035,3 @@ export async function bulkAddReadReceipts(messageIds: string[], userId: string):
     params,
   );
 }
-

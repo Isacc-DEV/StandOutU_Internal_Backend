@@ -245,7 +245,11 @@ export interface ApplicationRecord {
   resumeId?: string | null;
   url: string;
   domain?: string | null;
+  status?: "in_review" | "accepted" | "rejected";
   createdAt: string;
+  isReviewed?: boolean;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
 }
 
 export interface ApplicationSummary {
@@ -260,7 +264,13 @@ export interface ApplicationSummary {
   resumeLabel?: string | null;
   url?: string | null;
   domain?: string | null;
+  status?: "in_review" | "accepted" | "rejected" | null;
   createdAt: string;
+  isReviewed?: boolean | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  reviewerName?: string | null;
+  reviewerEmail?: string | null;
 }
 
 export type LlmProvider = "OPENAI" | "HUGGINGFACE" | "GEMINI";
