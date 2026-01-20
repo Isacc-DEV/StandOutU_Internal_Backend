@@ -112,6 +112,8 @@ export interface Profile {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  resumeTemplateId?: string | null;
+  resumeTemplateName?: string | null;
   assignedBidderId?: string | null;
   assignedBy?: string | null;
   assignedAt?: string | null;
@@ -203,6 +205,7 @@ export interface ResumeTemplate {
   html: string;
   createdBy?: string | null;
   createdByName?: string | null;
+  profileCount?: number;
   createdAt: string;
   updatedAt: string;
 }

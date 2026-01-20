@@ -1837,10 +1837,20 @@ async function bootstrap() {
       degree: z.string().optional(),
       majorField: z.string().optional(),
       graduationAt: z.string().optional(),
+      resumeTemplateId: z.string().uuid().optional().nullable(),
     });
     const body = schema.parse(request.body);
     const profileId = randomUUID();
     const now = new Date().toISOString();
+    const resumeTemplateId = body.resumeTemplateId ? trimString(body.resumeTemplateId) : null;
+    let resumeTemplateName: string | null = null;
+    if (resumeTemplateId) {
+      const template = await findResumeTemplateById(resumeTemplateId);
+      if (!template) {
+        return reply.status(400).send({ message: "Resume template not found" });
+      }
+      resumeTemplateName = template.name;
+    }
     const incomingBase = (body.baseInfo ?? {}) as BaseInfo;
     const baseResume = (body.baseResume ?? {}) as Record<string, unknown>;
     const baseInfo = mergeBaseInfo(
@@ -1908,6 +1918,8 @@ async function bootstrap() {
       baseInfo,
       baseResume,
       baseAdditionalBullets: body.baseAdditionalBullets ?? {},
+      resumeTemplateId: resumeTemplateId ?? null,
+      resumeTemplateName,
       createdBy: actor.id,
       createdAt: now,
       updatedAt: now,
@@ -1943,8 +1955,24 @@ async function bootstrap() {
       baseInfo: z.record(z.any()).optional(),
       baseResume: z.record(z.any()).optional(),
       baseAdditionalBullets: z.record(z.number()).optional(),
+      resumeTemplateId: z.string().uuid().optional().nullable(),
     });
     const body = schema.parse(request.body ?? {});
+
+    let resumeTemplateId = existing.resumeTemplateId ?? null;
+    let resumeTemplateName = existing.resumeTemplateName ?? null;
+    if (body.resumeTemplateId !== undefined) {
+      resumeTemplateId = trimString(body.resumeTemplateId) || null;
+      if (resumeTemplateId) {
+        const template = await findResumeTemplateById(resumeTemplateId);
+        if (!template) {
+          return reply.status(400).send({ message: "Resume template not found" });
+        }
+        resumeTemplateName = template.name;
+      } else {
+        resumeTemplateName = null;
+      }
+    }
 
     const incomingBase = (body.baseInfo ?? {}) as BaseInfo;
     const mergedBase = mergeBaseInfo(existing.baseInfo, incomingBase);
@@ -1957,6 +1985,8 @@ async function bootstrap() {
       baseInfo: mergedBase,
       baseResume,
       baseAdditionalBullets,
+      resumeTemplateId,
+      resumeTemplateName,
       updatedAt: new Date().toISOString(),
     };
 
@@ -1966,6 +1996,7 @@ async function bootstrap() {
       baseInfo: updatedProfile.baseInfo,
       baseResume: updatedProfile.baseResume,
       baseAdditionalBullets: updatedProfile.baseAdditionalBullets,
+      resumeTemplateId: updatedProfile.resumeTemplateId,
     });
     return updatedProfile;
   });

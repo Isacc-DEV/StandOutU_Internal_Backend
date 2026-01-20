@@ -436,6 +436,9 @@ export async function initDb() {
       UPDATE applications SET status = COALESCE(status, 'in_review');
       UPDATE applications SET is_reviewed = FALSE WHERE is_reviewed IS NULL;
 
+      ALTER TABLE IF EXISTS profiles
+        ADD COLUMN IF NOT EXISTS resume_template_id UUID REFERENCES resume_templates(id) ON DELETE SET NULL;
+
       CREATE INDEX IF NOT EXISTS idx_profile_accounts_profile ON profile_accounts(profile_id);
       CREATE INDEX IF NOT EXISTS idx_profile_accounts_email ON profile_accounts(email);
       CREATE INDEX IF NOT EXISTS idx_profile_accounts_status ON profile_accounts(status);
@@ -444,6 +447,7 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_profiles_base_resume_gin ON profiles USING GIN (base_resume);
       CREATE INDEX IF NOT EXISTS idx_profiles_created_by ON profiles(created_by);
       CREATE INDEX IF NOT EXISTS idx_profiles_assigned_bidder_id ON profiles(assigned_bidder_id);
+      CREATE INDEX IF NOT EXISTS idx_profiles_resume_template_id ON profiles(resume_template_id);
       CREATE INDEX IF NOT EXISTS idx_applications_bidder ON applications(bidder_user_id);
       CREATE INDEX IF NOT EXISTS idx_applications_profile ON applications(profile_id);
       CREATE INDEX IF NOT EXISTS idx_applications_created_at ON applications(created_at);
@@ -928,14 +932,15 @@ export async function insertProfile(profile: {
   baseInfo: Record<string, unknown>;
   baseResume?: Record<string, unknown>;
   baseAdditionalBullets?: Record<string, number>;
+  resumeTemplateId?: string | null;
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
 }) {
   await pool.query(
     `
-      INSERT INTO profiles (id, display_name, base_info, base_resume, base_additional_bullets, created_by, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO profiles (id, display_name, base_info, base_resume, base_additional_bullets, resume_template_id, created_by, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT (id) DO NOTHING
     `,
     [
@@ -944,6 +949,7 @@ export async function insertProfile(profile: {
       JSON.stringify(profile.baseInfo ?? {}),
       JSON.stringify(profile.baseResume ?? {}),
       JSON.stringify(profile.baseAdditionalBullets ?? {}),
+      profile.resumeTemplateId ?? null,
       profile.createdBy ?? null,
       profile.createdAt ?? new Date().toISOString(),
       profile.updatedAt ?? new Date().toISOString(),
@@ -1006,19 +1012,22 @@ export async function listProfiles(): Promise<Profile[]> {
   const { rows } = await pool.query<Profile>(
     `
       SELECT
-        id,
-        display_name AS "displayName",
-        base_info AS "baseInfo",
-        base_resume AS "baseResume",
-        base_additional_bullets AS "baseAdditionalBullets",
-        created_by AS "createdBy",
-        assigned_bidder_id AS "assignedBidderId",
-        assigned_by AS "assignedBy",
-        assigned_at AS "assignedAt",
-        created_at AS "createdAt",
-        updated_at AS "updatedAt"
-      FROM profiles
-      ORDER BY created_at DESC
+        p.id,
+        p.display_name AS "displayName",
+        p.base_info AS "baseInfo",
+        p.base_resume AS "baseResume",
+        p.base_additional_bullets AS "baseAdditionalBullets",
+        p.resume_template_id AS "resumeTemplateId",
+        rt.name AS "resumeTemplateName",
+        p.created_by AS "createdBy",
+        p.assigned_bidder_id AS "assignedBidderId",
+        p.assigned_by AS "assignedBy",
+        p.assigned_at AS "assignedAt",
+        p.created_at AS "createdAt",
+        p.updated_at AS "updatedAt"
+      FROM profiles p
+      LEFT JOIN resume_templates rt ON rt.id = p.resume_template_id
+      ORDER BY p.created_at DESC
     `,
   );
   return rows;
@@ -1028,20 +1037,23 @@ export async function listProfilesForBidder(bidderUserId: string): Promise<Profi
   const { rows } = await pool.query<Profile>(
     `
       SELECT
-        id,
-        display_name AS "displayName",
-        base_info AS "baseInfo",
-        base_resume AS "baseResume",
-        base_additional_bullets AS "baseAdditionalBullets",
-        created_by AS "createdBy",
-        assigned_bidder_id AS "assignedBidderId",
-        assigned_by AS "assignedBy",
-        assigned_at AS "assignedAt",
-        created_at AS "createdAt",
-        updated_at AS "updatedAt"
-      FROM profiles
-      WHERE assigned_bidder_id = $1
-      ORDER BY created_at DESC
+        p.id,
+        p.display_name AS "displayName",
+        p.base_info AS "baseInfo",
+        p.base_resume AS "baseResume",
+        p.base_additional_bullets AS "baseAdditionalBullets",
+        p.resume_template_id AS "resumeTemplateId",
+        rt.name AS "resumeTemplateName",
+        p.created_by AS "createdBy",
+        p.assigned_bidder_id AS "assignedBidderId",
+        p.assigned_by AS "assignedBy",
+        p.assigned_at AS "assignedAt",
+        p.created_at AS "createdAt",
+        p.updated_at AS "updatedAt"
+      FROM profiles p
+      LEFT JOIN resume_templates rt ON rt.id = p.resume_template_id
+      WHERE p.assigned_bidder_id = $1
+      ORDER BY p.created_at DESC
     `,
     [bidderUserId],
   );
@@ -1052,19 +1064,22 @@ export async function findProfileById(id: string): Promise<Profile | undefined> 
   const { rows } = await pool.query<Profile>(
     `
       SELECT
-        id,
-        display_name AS "displayName",
-        base_info AS "baseInfo",
-        base_resume AS "baseResume",
-        base_additional_bullets AS "baseAdditionalBullets",
-        created_by AS "createdBy",
-        assigned_bidder_id AS "assignedBidderId",
-        assigned_by AS "assignedBy",
-        assigned_at AS "assignedAt",
-        created_at AS "createdAt",
-        updated_at AS "updatedAt"
-      FROM profiles
-      WHERE id = $1
+        p.id,
+        p.display_name AS "displayName",
+        p.base_info AS "baseInfo",
+        p.base_resume AS "baseResume",
+        p.base_additional_bullets AS "baseAdditionalBullets",
+        p.resume_template_id AS "resumeTemplateId",
+        rt.name AS "resumeTemplateName",
+        p.created_by AS "createdBy",
+        p.assigned_bidder_id AS "assignedBidderId",
+        p.assigned_by AS "assignedBy",
+        p.assigned_at AS "assignedAt",
+        p.created_at AS "createdAt",
+        p.updated_at AS "updatedAt"
+      FROM profiles p
+      LEFT JOIN resume_templates rt ON rt.id = p.resume_template_id
+      WHERE p.id = $1
     `,
     [id],
   );
@@ -2209,6 +2224,7 @@ export async function updateProfileRecord(profile: {
   baseInfo: Record<string, unknown>;
   baseResume?: Record<string, unknown>;
   baseAdditionalBullets?: Record<string, number>;
+  resumeTemplateId?: string | null;
 }) {
   await pool.query(
     `
@@ -2217,6 +2233,7 @@ export async function updateProfileRecord(profile: {
           base_info = $3,
           base_resume = $4,
           base_additional_bullets = $5,
+          resume_template_id = $6,
           updated_at = NOW()
       WHERE id = $1
     `,
@@ -2226,6 +2243,7 @@ export async function updateProfileRecord(profile: {
       JSON.stringify(profile.baseInfo ?? {}),
       JSON.stringify(profile.baseResume ?? {}),
       JSON.stringify(profile.baseAdditionalBullets ?? {}),
+      profile.resumeTemplateId ?? null,
     ],
   );
 }
@@ -2246,9 +2264,12 @@ export async function listResumeTemplates(): Promise<ResumeTemplate[]> {
         rt.created_by AS "createdBy",
         u.user_name AS "createdByName",
         rt.created_at AS "createdAt",
-        rt.updated_at AS "updatedAt"
+        rt.updated_at AS "updatedAt",
+        COUNT(p.id)::int AS "profileCount"
       FROM resume_templates rt
       LEFT JOIN users u ON u.id = rt.created_by
+      LEFT JOIN profiles p ON p.resume_template_id = rt.id
+      GROUP BY rt.id, rt.name, rt.description, rt.html, rt.created_by, rt.created_at, rt.updated_at, u.user_name
       ORDER BY rt.updated_at DESC, rt.created_at DESC
     `,
   );
@@ -2266,10 +2287,13 @@ export async function findResumeTemplateById(id: string): Promise<ResumeTemplate
         rt.created_by AS "createdBy",
         u.user_name AS "createdByName",
         rt.created_at AS "createdAt",
-        rt.updated_at AS "updatedAt"
+        rt.updated_at AS "updatedAt",
+        COUNT(p.id)::int AS "profileCount"
       FROM resume_templates rt
       LEFT JOIN users u ON u.id = rt.created_by
+      LEFT JOIN profiles p ON p.resume_template_id = rt.id
       WHERE rt.id = $1
+      GROUP BY rt.id, rt.name, rt.description, rt.html, rt.created_by, rt.created_at, rt.updated_at, u.user_name
       LIMIT 1
     `,
     [id],
@@ -2311,15 +2335,9 @@ export async function insertResumeTemplate(template: ResumeTemplate): Promise<Re
       updatedAt,
     ],
   );
-  // Fetch the created name separately since RETURNING doesn't support JOINs
-  if (rows[0]?.createdBy) {
-    const userRows = await pool.query<{ user_name: string }>(
-      `SELECT user_name FROM users WHERE id = $1`,
-      [rows[0].createdBy],
-    );
-    rows[0].createdByName = userRows.rows[0]?.user_name || null;
-  }
-  return rows[0];
+  const created = await findResumeTemplateById(template.id);
+  if (created) return created;
+  return { ...rows[0], profileCount: 0 };
 }
 
 export async function updateResumeTemplate(template: {
@@ -2347,15 +2365,9 @@ export async function updateResumeTemplate(template: {
     `,
     [template.id, template.name, template.description ?? null, template.html],
   );
-  // Fetch the created name separately since RETURNING doesn't support JOINs
-  if (rows[0]?.createdBy) {
-    const userRows = await pool.query<{ user_name: string }>(
-      `SELECT user_name FROM users WHERE id = $1`,
-      [rows[0].createdBy],
-    );
-    rows[0].createdByName = userRows.rows[0]?.user_name || null;
-  }
-  return rows[0];
+  if (!rows[0]) return undefined;
+  const updated = await findResumeTemplateById(template.id);
+  return updated ?? rows[0];
 }
 
 export async function deleteResumeTemplate(id: string): Promise<boolean> {
