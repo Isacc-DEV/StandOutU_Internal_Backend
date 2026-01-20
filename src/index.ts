@@ -5875,13 +5875,14 @@ ${body.question}`;
     const schema = z.object({
       profileId: z.string().uuid(),
       url: z.string().trim().optional(),
+      company: z.string().trim().optional().nullable(),
       resumeId: z.string().uuid().optional().nullable(),
     });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({ message: "Invalid request body" });
     }
-    const { profileId, url, resumeId } = parsed.data;
+    const { profileId, url, resumeId, company } = parsed.data;
     const profile = await findProfileById(profileId);
     if (!profile) return reply.status(404).send({ message: "Profile not found" });
     if (!profile.assignedBidderId) {
@@ -5900,6 +5901,7 @@ ${body.question}`;
       resumeId: resumeId ?? null,
       url: url?.trim() || "",
       domain: tryExtractDomain(url ?? ""),
+      company: trimToNull(company ?? null),
       createdAt: new Date().toISOString(),
       status: "in_review",
       isReviewed: false,

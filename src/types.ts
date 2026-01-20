@@ -248,6 +248,7 @@ export interface ApplicationRecord {
   resumeId?: string | null;
   url: string;
   domain?: string | null;
+  company?: string | null;
   status?: "in_review" | "accepted" | "rejected";
   createdAt: string;
   isReviewed?: boolean;
@@ -267,6 +268,7 @@ export interface ApplicationSummary {
   resumeLabel?: string | null;
   url?: string | null;
   domain?: string | null;
+  company?: string | null;
   status?: "in_review" | "accepted" | "rejected" | null;
   createdAt: string;
   isReviewed?: boolean | null;

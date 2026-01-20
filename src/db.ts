@@ -195,6 +195,7 @@ export async function initDb() {
         resume_id UUID,
         url TEXT,
         domain TEXT,
+        company TEXT,
         status TEXT DEFAULT 'in_review',
         is_reviewed BOOLEAN DEFAULT FALSE,
         reviewed_by UUID REFERENCES users(id),
@@ -432,6 +433,8 @@ export async function initDb() {
         ADD COLUMN IF NOT EXISTS is_reviewed BOOLEAN DEFAULT FALSE,
         ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES users(id),
         ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP;
+      ALTER TABLE IF EXISTS applications
+        ADD COLUMN IF NOT EXISTS company TEXT;
 
       UPDATE applications SET status = COALESCE(status, 'in_review');
       UPDATE applications SET is_reviewed = FALSE WHERE is_reviewed IS NULL;
@@ -968,13 +971,14 @@ export async function insertApplication(record: ApplicationRecord) {
         resume_id,
         url,
         domain,
+        company,
         status,
         created_at,
         is_reviewed,
         reviewed_by,
         reviewed_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       ON CONFLICT (session_id) DO NOTHING
     `,
     [
@@ -985,6 +989,7 @@ export async function insertApplication(record: ApplicationRecord) {
       record.resumeId ?? null,
       record.url,
       record.domain ?? null,
+      record.company ?? null,
       record.createdAt,
       record.status ?? "in_review",
       record.isReviewed ?? false,
@@ -3144,6 +3149,7 @@ const APPLICATION_SUMMARY_SELECT = `
     NULL::text AS "resumeLabel",
     a.url AS "url",
     a.domain AS "domain",
+    a.company AS "company",
     a.status AS "status",
     a.is_reviewed AS "isReviewed",
     a.reviewed_at AS "reviewedAt",
