@@ -1852,10 +1852,18 @@ async function bootstrap() {
   app.get("/health", async () => ({ status: "ok" }));
 
   app.post("/auth/login", async (request, reply) => {
-    const schema = z.object({
-      email: z.string().email(),
-      password: z.string().optional(),
-    });
+    const schema = z
+      .object({
+        identifier: z.string().min(2),
+        password: z.string().optional(),
+      })
+      .or(
+        z.object({
+          email: z.string().min(2),
+          password: z.string().optional(),
+        }),
+      );
+
     const parsed = schema.safeParse(request.body ?? {});
     if (!parsed.success) {
       const issue = parsed.error.errors[0];
@@ -1863,15 +1871,23 @@ async function bootstrap() {
       const message = `${field ? `${field}: ` : ""}${issue?.message ?? "Invalid login payload"}`;
       return reply.status(400).send({ message });
     }
-    const body = parsed.data;
-    const user = await findUserByEmail(body.email);
+
+    const loginValue = (parsed.data as any).identifier ?? (parsed.data as any).email ?? "";
+    const password = (parsed.data as any).password;
+    const login = (loginValue as string).trim();
+    if (!login) {
+      return reply.status(400).send({ message: "Missing login identifier" });
+    }
+
+    const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(login);
+    const user = looksLikeEmail ? await findUserByEmail(login) : await findUserByUserName(login);
     if (!user) {
       return reply.status(401).send({ message: "Invalid credentials" });
     }
     if (
       user.password &&
-      body.password &&
-      !(await bcrypt.compare(body.password, user.password))
+      password &&
+      !(await bcrypt.compare(password, user.password))
     ) {
       return reply.status(401).send({ message: "Invalid credentials" });
     }
