@@ -147,6 +147,9 @@ import {
   insertTask,
   deleteTask,
   findTaskById,
+  getLatestMailReceivedAt,
+  listMailMessages,
+  upsertMailMessages,
 } from "./db";
 import {
   CANONICAL_LABEL_KEYS,
@@ -161,7 +164,7 @@ import {
   callPromptPack,
   promptBuilders,
 } from "./resumeClassifier";
-import { loadOutlookEvents, ensureFreshToken } from "./msGraph";
+import { loadOutlookEvents, ensureFreshToken, loadOutlookMessages, sendOutlookMail } from "./msGraph";
 
 const PORT = config.PORT;
 const app = fastify({ logger: config.DEBUG_MODE });
@@ -1839,6 +1842,157 @@ const DEFAULT_AUTOFILL_FIELDS = [
   },
 ];
 
+let mailSyncTimer: NodeJS.Timeout | null = null;
+
+async function findPrimaryAdminId(): Promise<string | null> {
+  const { rows } = await pool.query<{ id: string }>(
+    "SELECT id FROM users WHERE role = 'ADMIN' ORDER BY created_at ASC LIMIT 1",
+  );
+  return rows[0]?.id ?? null;
+}
+
+async function syncMailForOwner(params: {
+  ownerUserId: string;
+  mailboxFilter?: string[] | null;
+  logger?: any;
+  maxItems?: number;
+}) {
+  const { ownerUserId, mailboxFilter, logger, maxItems = 100 } = params;
+  const accounts = await listUserOAuthAccounts(ownerUserId, "azure-ad");
+  const mailboxFilterSet = mailboxFilter?.length
+    ? new Set(mailboxFilter.map((m) => m.toLowerCase()))
+    : null;
+  const filteredAccounts = mailboxFilterSet
+    ? accounts.filter((acc) => mailboxFilterSet.has(acc.email.toLowerCase()))
+    : accounts;
+
+  if (filteredAccounts.length === 0) {
+    return { synced: 0, warnings: ["No mail accounts available to sync"] };
+  }
+
+  let synced = 0;
+  const warnings: string[] = [];
+
+  for (const account of filteredAccounts) {
+    try {
+      const folders: Array<'inbox' | 'sent'> = ['inbox', 'sent'];
+
+      for (const folder of folders) {
+        const latest = await getLatestMailReceivedAt(ownerUserId, account.id, folder);
+        const since = latest ? new Date(new Date(latest).getTime() - 5 * 60_000).toISOString() : null;
+
+        const { messages, warning } = await loadOutlookMessages({
+          mailbox: account.email,
+          account,
+          maxItems,
+          since,
+          folder,
+          logger,
+        });
+
+        if (warning) {
+          warnings.push(`${account.email} (${folder}): ${warning}`);
+        }
+
+        if (messages.length === 0) continue;
+
+        const mapped = messages
+          .map((msg) => {
+            const providerMessageId = (msg as any).id || (msg as any).internetMessageId;
+            if (!providerMessageId) return null;
+            const toRecipients = Array.isArray(msg.toRecipients)
+              ? msg.toRecipients
+                  .map((rec) => {
+                    const address = rec?.emailAddress?.address;
+                    if (!address) return null;
+                    return {
+                      email: address,
+                      name: rec.emailAddress?.name ?? null,
+                    };
+                  })
+                  .filter((rec): rec is { email: string; name?: string | null } => Boolean(rec))
+              : [];
+            return {
+              providerMessageId,
+              mailboxId: account.id,
+              direction: folder,
+              subject: msg.subject ?? null,
+              fromEmail: msg.from?.emailAddress?.address ?? null,
+              fromName: msg.from?.emailAddress?.name ?? null,
+              toRecipients: toRecipients.length ? toRecipients : null,
+              snippet: msg.bodyPreview ?? null,
+              webLink: msg.webLink ?? null,
+              receivedAt: msg.receivedDateTime ?? null,
+              isRead: msg.isRead ?? null,
+              bodyContent: (msg as any).body?.content ?? null,
+              bodyContentType: (msg as any).body?.contentType ?? null,
+            };
+          })
+          .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+        if (mapped.length) {
+          const inserted = await upsertMailMessages({
+            ownerUserId,
+            mailboxId: account.id,
+            messages: mapped,
+          });
+          synced += inserted;
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to sync mailbox";
+      warnings.push(`${account.email}: ${message}`);
+      logger?.error({ err, mailbox: account.email }, "mail-sync-error");
+    }
+  }
+
+  return { synced, warnings };
+}
+
+async function syncMailForPrimaryAdmin(options: {
+  mailboxFilter?: string[] | null;
+  logger?: any;
+}) {
+  const adminId = await findPrimaryAdminId();
+  if (!adminId) {
+    return { synced: 0, warnings: ["No admin user found for mail sync"] };
+  }
+  return syncMailForOwner({
+    ownerUserId: adminId,
+    mailboxFilter: options.mailboxFilter,
+    logger: options.logger,
+  });
+}
+
+function startMailSyncScheduler(logger?: any) {
+  const interval = config.MAIL_SYNC_INTERVAL_MS;
+  if (!interval || interval < 30_000) {
+    logger?.info("Mail sync scheduler disabled (interval too low or not set)");
+    return;
+  }
+
+  const run = async () => {
+    try {
+      const result = await syncMailForPrimaryAdmin({ logger });
+      if (result.synced > 0) {
+        logger?.info(
+          { synced: result.synced, warnings: result.warnings },
+          "mail-sync-scheduler-run",
+        );
+      } else if (result.warnings.length) {
+        logger?.warn({ warnings: result.warnings }, "mail-sync-scheduler-warn");
+      }
+    } catch (err) {
+      logger?.error({ err }, "mail-sync-scheduler-error");
+    }
+  };
+
+  // Kick off an immediate sync on startup
+  void run();
+
+  mailSyncTimer = setInterval(run, interval);
+}
+
 // initDb, auth guard, signToken live in dedicated modules
 
 async function bootstrap() {
@@ -1853,14 +2007,23 @@ async function bootstrap() {
   await initDb();
   void startScraperService();
   await registerScraperApiRoutes(app);
+  startMailSyncScheduler(app.log);
 
   app.get("/health", async () => ({ status: "ok" }));
 
   app.post("/auth/login", async (request, reply) => {
-    const schema = z.object({
-      email: z.string().email(),
-      password: z.string().optional(),
-    });
+    const schema = z
+      .object({
+        identifier: z.string().min(2),
+        password: z.string().optional(),
+      })
+      .or(
+        z.object({
+          email: z.string().min(2),
+          password: z.string().optional(),
+        }),
+      );
+
     const parsed = schema.safeParse(request.body ?? {});
     if (!parsed.success) {
       const issue = parsed.error.errors[0];
@@ -1868,15 +2031,23 @@ async function bootstrap() {
       const message = `${field ? `${field}: ` : ""}${issue?.message ?? "Invalid login payload"}`;
       return reply.status(400).send({ message });
     }
-    const body = parsed.data;
-    const user = await findUserByEmail(body.email);
+
+    const loginValue = (parsed.data as any).identifier ?? (parsed.data as any).email ?? "";
+    const password = (parsed.data as any).password;
+    const login = (loginValue as string).trim();
+    if (!login) {
+      return reply.status(400).send({ message: "Missing login identifier" });
+    }
+
+    const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(login);
+    const user = looksLikeEmail ? await findUserByEmail(login) : await findUserByUserName(login);
     if (!user) {
       return reply.status(401).send({ message: "Invalid credentials" });
     }
     if (
       user.password &&
-      body.password &&
-      !(await bcrypt.compare(body.password, user.password))
+      password &&
+      !(await bcrypt.compare(password, user.password))
     ) {
       return reply.status(401).send({ message: "Invalid credentials" });
     }
@@ -3112,12 +3283,12 @@ async function bootstrap() {
     }
 
     const tenantId = config.MS_TENANT_ID || "common";
-    const baseScope = "openid profile email offline_access Calendars.Read User.Read";
+    const baseScope = "openid profile email offline_access Calendars.Read Mail.Read Mail.Send User.Read";
     const includeSharedCalendars =
       process.env.MS_GRAPH_SHARED_CALENDARS === "true" ||
       (tenantId !== "common" && tenantId !== "consumers");
     const scope = includeSharedCalendars
-      ? `${baseScope} Calendars.Read.Shared`
+      ? `${baseScope} Calendars.Read.Shared Mail.Read.Shared Mail.Send.Shared`
       : baseScope;
 
     // Generate random state for CSRF protection and encode frontend_redirect in it
@@ -3208,12 +3379,12 @@ async function bootstrap() {
 
     // Exchange code for tokens
     const tenantId = config.MS_TENANT_ID || "common";
-    const baseScope = "openid profile email offline_access Calendars.Read User.Read";
+    const baseScope = "openid profile email offline_access Calendars.Read Mail.Read Mail.Send User.Read";
     const includeSharedCalendars =
       process.env.MS_GRAPH_SHARED_CALENDARS === "true" ||
       (tenantId !== "common" && tenantId !== "consumers");
     const scope = includeSharedCalendars
-      ? `${baseScope} Calendars.Read.Shared`
+      ? `${baseScope} Calendars.Read.Shared Mail.Read.Shared Mail.Send.Shared`
       : baseScope;
 
     const tokenParams = new URLSearchParams({
@@ -3952,6 +4123,180 @@ async function bootstrap() {
         : undefined),
       failedMailboxes,
     };
+  });
+
+  app.get("/mail/messages", async (request, reply) => {
+    if (forbidObserver(reply, request.authUser)) return;
+    const actor = request.authUser;
+    if (!actor) {
+      return reply.status(401).send({ message: "Unauthorized" });
+    }
+
+    const parsed = z
+      .object({
+        mailboxes: z.string().optional(),
+        limit: z.string().optional(),
+        cursor: z.string().optional(),
+        search: z.string().optional(),
+        folder: z.enum(["inbox", "sent", "all"]).optional(),
+      })
+      .safeParse(request.query);
+    if (!parsed.success) {
+      return reply.status(400).send({ message: "Invalid query" });
+    }
+
+    const mailboxParams = parsed.data.mailboxes
+      ? parsed.data.mailboxes
+          .split(",")
+          .map((m) => m.trim().toLowerCase())
+          .filter(Boolean)
+      : [];
+
+    const actorAccounts = await listUserOAuthAccounts(actor.id, "azure-ad");
+    const primaryAdminId = await findPrimaryAdminId();
+
+    // Prefer actor's own mailboxes; fallback to admin's cached mailboxes only if actor has none.
+    const useAdminFallback = actorAccounts.length === 0 && primaryAdminId && actor.role !== "ADMIN";
+    const ownerUserId = useAdminFallback ? primaryAdminId! : actor.id;
+    const accounts = useAdminFallback ? await listUserOAuthAccounts(primaryAdminId!, "azure-ad") : actorAccounts;
+
+    if (!accounts.length) {
+      return reply.status(400).send({ message: "No connected mail account" });
+    }
+
+    const accountMap = new Map(accounts.map((acc) => [acc.email.toLowerCase(), acc]));
+    let mailboxIds: string[] | undefined = undefined;
+    if (mailboxParams.length) {
+      mailboxIds = mailboxParams
+        .map((email) => accountMap.get(email)?.id)
+        .filter((id): id is string => Boolean(id));
+    }
+
+    const limit = parsed.data.limit ? Number(parsed.data.limit) : undefined;
+    const cursor = parsed.data.cursor
+      ? (() => {
+          const [receivedAt, id] = parsed.data.cursor.split("|");
+          if (!receivedAt || !id) return null;
+          return { receivedAt, id };
+        })()
+      : null;
+
+    const messages = await listMailMessages({
+      ownerUserId,
+      mailboxIds,
+      limit,
+      cursor,
+      search: parsed.data.search ?? null,
+      direction: parsed.data.folder ?? 'all',
+    });
+
+    const mailboxIdToEmail = new Map(accounts.map((acc) => [acc.id, acc.email]));
+    const responseMessages = messages.map((msg) => ({
+      ...msg,
+      mailboxEmail: mailboxIdToEmail.get(msg.mailboxId) ?? null,
+    }));
+
+    const next =
+      responseMessages.length && responseMessages.length === (limit ?? responseMessages.length)
+        ? responseMessages[responseMessages.length - 1]
+        : null;
+    const nextCursor = next?.receivedAt && next?.id ? `${next.receivedAt}|${next.id}` : null;
+
+    return {
+      mailboxes: accounts.map((acc) => ({
+        id: acc.id,
+        email: acc.email,
+        displayName: acc.displayName ?? null,
+      })),
+      messages: responseMessages,
+      nextCursor,
+      source: "db",
+    };
+  });
+
+  app.post("/mail/sync", async (request, reply) => {
+    if (forbidObserver(reply, request.authUser)) return;
+    const actor = request.authUser;
+    if (!actor) {
+      return reply.status(401).send({ message: "Unauthorized" });
+    }
+
+    const parsed = z
+      .object({
+        mailboxes: z.array(z.string().email()).optional(),
+      })
+      .safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.status(400).send({ message: "Invalid payload" });
+    }
+
+    const actorAccounts = await listUserOAuthAccounts(actor.id, "azure-ad");
+    const primaryAdminId = await findPrimaryAdminId();
+    const useAdminFallback = actorAccounts.length === 0 && actor.role !== "ADMIN" && primaryAdminId;
+    const ownerUserId = useAdminFallback ? primaryAdminId! : actor.id;
+
+    if (!actorAccounts.length && !useAdminFallback) {
+      return reply.status(400).send({ message: "No connected mail account to sync" });
+    }
+
+    const result = await syncMailForOwner({
+      ownerUserId,
+      mailboxFilter: parsed.data.mailboxes ?? null,
+      logger: request.log,
+    });
+
+    return { synced: result.synced, warnings: result.warnings };
+  });
+
+  app.post("/mail/send", async (request, reply) => {
+    if (forbidObserver(reply, request.authUser)) return;
+    const actor = request.authUser;
+    if (!actor) {
+      return reply.status(401).send({ message: "Unauthorized" });
+    }
+    const schema = z.object({
+      to: z.array(z.string().email()).min(1),
+      subject: z.string().max(500).optional(),
+      body: z.string().optional(),
+      bodyContentType: z.enum(["Text", "HTML"]).optional(),
+      mailboxId: z.string().uuid().optional(),
+    });
+    const parsed = schema.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.status(400).send({ message: "Invalid payload" });
+    }
+
+    // Prefer specified mailboxId; otherwise use actor's first account
+    let account: UserOAuthAccount | undefined;
+    if (parsed.data.mailboxId) {
+      account = (await findUserOAuthAccountById(parsed.data.mailboxId)) || undefined;
+      if (account && account.userId !== actor.id && actor.role !== "ADMIN") {
+        return reply.status(403).send({ message: "Not allowed to send from this mailbox" });
+      }
+    } else {
+      const accounts = await listUserOAuthAccounts(actor.id, "azure-ad");
+      account = accounts[0];
+    }
+
+    if (!account) {
+      return reply.status(400).send({ message: "No connected mail account to send from" });
+    }
+
+    try {
+      await sendOutlookMail({
+        account,
+        mailbox: account.email,
+        to: parsed.data.to.map((email) => ({ email })),
+        subject: parsed.data.subject ?? "",
+        body: parsed.data.body ?? "",
+        bodyContentType: parsed.data.bodyContentType ?? "HTML",
+        logger: request.log,
+      });
+      return { message: "Sent" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to send mail";
+      return reply.status(500).send({ message: msg });
+    }
   });
 
   app.get("/daily-reports", async (request, reply) => {

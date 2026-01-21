@@ -121,12 +121,12 @@ export async function refreshAzureADToken(
   }
 
   const tenantId = graphConfig.tenantId || 'common';
-  const baseScope = 'openid profile email offline_access Calendars.Read User.Read';
+  const baseScope = 'openid profile email offline_access Calendars.Read Mail.Read Mail.Send User.Read';
   const includeSharedCalendars =
     process.env.MS_GRAPH_SHARED_CALENDARS === 'true' ||
     (tenantId !== 'common' && tenantId !== 'consumers');
   const scope = includeSharedCalendars
-    ? `${baseScope} Calendars.Read.Shared`
+    ? `${baseScope} Calendars.Read.Shared Mail.Read.Shared Mail.Send.Shared`
     : baseScope;
 
   const params = new URLSearchParams({
@@ -271,5 +271,159 @@ export async function loadOutlookEvents(params: {
       warning:
         err instanceof Error ? err.message : 'Falling back to sample events due to an unknown error',
     };
+  }
+}
+
+export async function loadOutlookMessages(params: {
+  mailbox: string;
+  account: UserOAuthAccount;
+  maxItems?: number;
+  since?: string | null;
+  folder?: 'inbox' | 'sent';
+  logger?: any;
+}): Promise<{
+  messages: Array<{
+    id: string;
+    internetMessageId?: string | null;
+    subject?: string | null;
+    from?: { emailAddress?: { address?: string; name?: string } } | null;
+    toRecipients?: Array<{ emailAddress?: { address?: string; name?: string } }> | null;
+    isRead?: boolean | null;
+    receivedDateTime?: string | null;
+    bodyPreview?: string | null;
+    webLink?: string | null;
+    body?: { content?: string | null; contentType?: string | null } | null;
+  }>;
+  source: 'graph' | 'empty';
+  warning?: string;
+}> {
+  const { mailbox, account, maxItems = 50, since, folder = 'inbox', logger } = params;
+  const doFetch = async (accessToken: string) => {
+    const useMe = account.email.toLowerCase() === mailbox.toLowerCase();
+    const basePath = folder === 'sent' ? 'sentItems' : 'messages';
+    const endpoint = useMe
+      ? `https://graph.microsoft.com/v1.0/me/${basePath}`
+      : `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(mailbox)}/${basePath}`;
+
+    const url = new URL(endpoint);
+    url.searchParams.set('$top', String(maxItems));
+    url.searchParams.set(
+      '$select',
+      'id,subject,from,toRecipients,receivedDateTime,isRead,bodyPreview,webLink,internetMessageId,body',
+    );
+    url.searchParams.set('$orderby', 'receivedDateTime DESC');
+    if (since) {
+      url.searchParams.set('$filter', `receivedDateTime ge ${since}`);
+    }
+
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Prefer: 'outlook.body-content-type="text"',
+      },
+    });
+    return res;
+  };
+
+  try {
+    let freshAccount = await ensureFreshToken(account);
+    if (!freshAccount.accessToken) {
+      throw new Error('No access token available');
+    }
+    let res = await doFetch(freshAccount.accessToken);
+
+    // Retry once on invalid/expired token
+    if (!res.ok && res.status === 401) {
+      try {
+        freshAccount = await refreshAzureADToken(freshAccount);
+        if (freshAccount.accessToken) {
+          res = await doFetch(freshAccount.accessToken);
+        }
+      } catch (refreshErr) {
+        logger?.warn({ refreshErr }, 'graph-mail-refresh-failed');
+      }
+    }
+
+    const data = (await res.json()) as any;
+    if (!res.ok) {
+      logger?.error({ status: res.status, data }, 'graph-mail-failed');
+      throw new Error(data?.error?.message || 'Failed to fetch mail from Graph');
+    }
+
+    const messages: any[] = Array.isArray(data?.value) ? data.value : [];
+    return { messages, source: 'graph' };
+  } catch (err) {
+    logger?.warn({ err }, 'graph-mail-fallback');
+    return {
+      messages: [],
+      source: 'empty',
+      warning:
+        err instanceof Error ? err.message : 'Unable to fetch mail from Graph',
+    };
+  }
+}
+
+export async function sendOutlookMail(params: {
+  account: UserOAuthAccount;
+  mailbox: string;
+  to: Array<{ email: string; name?: string | null }>;
+  subject?: string | null;
+  body?: string | null;
+  bodyContentType?: 'Text' | 'HTML';
+  logger?: any;
+}) {
+  const { account, mailbox, to, subject, body, bodyContentType = 'HTML', logger } = params;
+  const freshAccount = await ensureFreshToken(account);
+  if (!freshAccount.accessToken) {
+    throw new Error('No access token available');
+  }
+  const useMe = freshAccount.email.toLowerCase() === mailbox.toLowerCase();
+  const endpoint = useMe
+    ? 'https://graph.microsoft.com/v1.0/me/sendMail'
+    : `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(mailbox)}/sendMail`;
+
+  const payload = {
+    message: {
+      subject: subject || '',
+      body: {
+        contentType: bodyContentType,
+        content: body || '',
+      },
+      toRecipients: to.map((rec) => ({
+        emailAddress: {
+          address: rec.email,
+          name: rec.name || undefined,
+        },
+      })),
+    },
+    saveToSentItems: true,
+  };
+  const doSend = async (accessToken: string) => {
+    return fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  };
+
+  let res = await doSend(freshAccount.accessToken);
+  if (!res.ok && res.status === 401) {
+    try {
+      const refreshed = await refreshAzureADToken(freshAccount);
+      if (refreshed.accessToken) {
+        res = await doSend(refreshed.accessToken);
+      }
+    } catch (refreshErr) {
+      logger?.warn({ refreshErr }, 'graph-send-refresh-failed');
+    }
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    logger?.error({ status: res.status, text }, 'graph-send-mail-failed');
+    throw new Error(text || 'Failed to send mail');
   }
 }

@@ -51,4 +51,8 @@ export const config = {
   
   NEXTAUTH_URL: process.env.NEXTAUTH_URL || '',
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
+
+  MAIL_SYNC_INTERVAL_MS: process.env.MAIL_SYNC_INTERVAL_MS
+    ? Number(process.env.MAIL_SYNC_INTERVAL_MS)
+    : 15 * 60 * 1000, // default to 15 minutes
 };
