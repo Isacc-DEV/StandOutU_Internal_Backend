@@ -485,28 +485,6 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id) WHERE read_at IS NULL;
 
-      CREATE TABLE IF NOT EXISTS calendar_events (
-        id UUID PRIMARY KEY,
-        owner_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-        mailbox TEXT,
-        mailbox_id UUID REFERENCES user_oauth_accounts(id) ON DELETE SET NULL,
-        provider TEXT NOT NULL DEFAULT 'MICROSOFT',
-        provider_event_id TEXT NOT NULL,
-        title TEXT,
-        start_at TEXT NOT NULL,
-        end_at TEXT NOT NULL,
-        is_all_day BOOLEAN DEFAULT FALSE,
-        organizer TEXT,
-        location TEXT,
-        timezone TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW(),
-        UNIQUE (owner_user_id, provider_event_id)
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_calendar_events_owner_mailbox ON calendar_events(owner_user_id, mailbox);
-      CREATE INDEX IF NOT EXISTS idx_calendar_events_owner_start ON calendar_events(owner_user_id, start_at);
-
       CREATE TABLE IF NOT EXISTS user_oauth_accounts (
         id UUID PRIMARY KEY,
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -529,6 +507,28 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_user_oauth_accounts_user ON user_oauth_accounts(user_id);
       CREATE INDEX IF NOT EXISTS idx_user_oauth_accounts_provider ON user_oauth_accounts(provider);
       CREATE INDEX IF NOT EXISTS idx_user_oauth_accounts_user_provider ON user_oauth_accounts(user_id, provider);
+
+      CREATE TABLE IF NOT EXISTS calendar_events (
+        id UUID PRIMARY KEY,
+        owner_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        mailbox TEXT,
+        mailbox_id UUID REFERENCES user_oauth_accounts(id) ON DELETE SET NULL,
+        provider TEXT NOT NULL DEFAULT 'MICROSOFT',
+        provider_event_id TEXT NOT NULL,
+        title TEXT,
+        start_at TEXT NOT NULL,
+        end_at TEXT NOT NULL,
+        is_all_day BOOLEAN DEFAULT FALSE,
+        organizer TEXT,
+        location TEXT,
+        timezone TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE (owner_user_id, provider_event_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_calendar_events_owner_mailbox ON calendar_events(owner_user_id, mailbox);
+      CREATE INDEX IF NOT EXISTS idx_calendar_events_owner_start ON calendar_events(owner_user_id, start_at);
 
       CREATE TABLE IF NOT EXISTS daily_reports (
         id UUID PRIMARY KEY,

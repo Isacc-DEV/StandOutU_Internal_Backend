@@ -30,12 +30,17 @@ export const authGuard = fastifyPlugin(async (instance) => {
       routeUrl === '/auth/signup' ||
       routeUrl === '/calendar/oauth/callback' ||
       (routeUrl && routeUrl.startsWith('/ws/browser')) ||
-      (routeUrl && routeUrl.startsWith('/ws/community'))
+      (routeUrl && routeUrl.startsWith('/ws/community')) ||
+      (routeUrl && routeUrl.startsWith('/ws/notifications'))
     ) {
       return;
     }
     // Also allow websocket upgrade paths detected via raw url.
-    if (request.raw?.url?.startsWith('/ws/browser') || request.raw?.url?.startsWith('/ws/community')) {
+    if (
+      request.raw?.url?.startsWith('/ws/browser') ||
+      request.raw?.url?.startsWith('/ws/community') ||
+      request.raw?.url?.startsWith('/ws/notifications')
+    ) {
       return;
     }
     const header = request.headers.authorization;
