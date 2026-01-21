@@ -64,6 +64,34 @@ type StoredCalendarEvent = {
   timezone?: string | null;
 };
 
+type MailRecipient = {
+  email: string;
+  name?: string | null;
+};
+
+type MailMessageInput = {
+  providerMessageId: string;
+  mailboxId: string;
+  direction?: 'inbox' | 'sent';
+  subject?: string | null;
+  fromEmail?: string | null;
+  fromName?: string | null;
+  toRecipients?: MailRecipient[] | null;
+  snippet?: string | null;
+  webLink?: string | null;
+  receivedAt?: string | null;
+  isRead?: boolean | null;
+  bodyContent?: string | null;
+  bodyContentType?: string | null;
+};
+
+export type StoredMailMessage = MailMessageInput & {
+  id: string;
+  ownerUserId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const DEFAULT_ADMIN_DATABASE = 'postgres';
 
 function getDatabaseName(connectionString: string): string | null {
@@ -530,6 +558,32 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_user_oauth_accounts_provider ON user_oauth_accounts(provider);
       CREATE INDEX IF NOT EXISTS idx_user_oauth_accounts_user_provider ON user_oauth_accounts(user_id, provider);
 
+      CREATE TABLE IF NOT EXISTS mail_receive (
+        id UUID PRIMARY KEY,
+        owner_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        mailbox_id UUID REFERENCES user_oauth_accounts(id) ON DELETE CASCADE,
+        provider TEXT NOT NULL DEFAULT 'MICROSOFT',
+        provider_message_id TEXT NOT NULL,
+        direction TEXT NOT NULL DEFAULT 'inbox',
+        subject TEXT,
+        from_email TEXT,
+        from_name TEXT,
+        to_recipients JSONB,
+        snippet TEXT,
+        web_link TEXT,
+        received_at TIMESTAMP,
+        is_read BOOLEAN DEFAULT FALSE,
+        body_content TEXT,
+        body_content_type TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE (owner_user_id, provider_message_id, direction)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_mail_receive_owner_mailbox ON mail_receive(owner_user_id, mailbox_id);
+      CREATE INDEX IF NOT EXISTS idx_mail_receive_owner_received ON mail_receive(owner_user_id, received_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_mail_receive_direction ON mail_receive(owner_user_id, direction, received_at DESC);
+
       CREATE TABLE IF NOT EXISTS daily_reports (
         id UUID PRIMARY KEY,
         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -646,6 +700,53 @@ export async function initDb() {
         UPDATE daily_reports SET status = 'in_review' WHERE status = 'sent';
         UPDATE daily_reports SET status = 'accepted' WHERE status = 'accept';
         UPDATE daily_reports SET status = 'rejected' WHERE status = 'failed';
+      `,
+    );
+
+    // Backfill into mail_receive and ensure it exists
+    await client.query(
+      `
+        INSERT INTO mail_receive (
+          id,
+          owner_user_id,
+          mailbox_id,
+          provider,
+          provider_message_id,
+          direction,
+          subject,
+          from_email,
+          from_name,
+          to_recipients,
+          snippet,
+          web_link,
+          received_at,
+          is_read,
+          body_content,
+          body_content_type,
+          created_at,
+          updated_at
+        )
+        SELECT
+          COALESCE(m.id, gen_random_uuid()),
+          m.owner_user_id,
+          m.mailbox_id,
+          m.provider,
+          m.provider_message_id,
+          COALESCE(m.direction, 'inbox'),
+          m.subject,
+          m.from_email,
+          m.from_name,
+          m.to_recipients,
+          m.snippet,
+          m.web_link,
+          m.received_at,
+          m.is_read,
+          m.body_content,
+          m.body_content_type,
+          m.created_at,
+          m.updated_at
+        FROM mail_receive m
+        ON CONFLICT (owner_user_id, provider_message_id, direction) DO NOTHING;
       `,
     );
 
@@ -1293,6 +1394,189 @@ export async function listCalendarEventsForOwner(
   }));
 }
 
+export async function getLatestMailReceivedAt(
+  ownerUserId: string,
+  mailboxId: string,
+  direction?: 'inbox' | 'sent',
+): Promise<string | null> {
+  const { rows } = await pool.query<{ received_at: string | null }>(
+    `
+      SELECT received_at
+      FROM mail_receive
+      WHERE owner_user_id = $1 AND mailbox_id = $2
+        AND ($3::text IS NULL OR direction = $3)
+      ORDER BY received_at DESC NULLS LAST, updated_at DESC
+      LIMIT 1
+    `,
+    [ownerUserId, mailboxId, direction ?? null],
+  );
+  return rows[0]?.received_at ?? null;
+}
+
+export async function upsertMailMessages(params: {
+  ownerUserId: string;
+  mailboxId: string;
+  messages: MailMessageInput[];
+}): Promise<number> {
+  if (!params.messages.length) return 0;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    let count = 0;
+    for (const message of params.messages) {
+      await client.query(
+        `
+          INSERT INTO mail_receive (
+            id,
+            owner_user_id,
+            mailbox_id,
+            provider,
+            provider_message_id,
+            direction,
+            subject,
+            from_email,
+            from_name,
+            to_recipients,
+            snippet,
+            web_link,
+            received_at,
+            is_read,
+            body_content,
+            body_content_type,
+            created_at,
+            updated_at
+          )
+          VALUES (
+            $1, $2, $3, 'MICROSOFT', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW()
+          )
+          ON CONFLICT (owner_user_id, provider_message_id, direction) DO UPDATE
+          SET
+            subject = EXCLUDED.subject,
+            from_email = EXCLUDED.from_email,
+            from_name = EXCLUDED.from_name,
+            to_recipients = EXCLUDED.to_recipients,
+            snippet = EXCLUDED.snippet,
+            web_link = EXCLUDED.web_link,
+            received_at = EXCLUDED.received_at,
+            is_read = EXCLUDED.is_read,
+            body_content = EXCLUDED.body_content,
+            body_content_type = EXCLUDED.body_content_type,
+            direction = EXCLUDED.direction,
+            updated_at = NOW()
+          RETURNING id
+        `,
+        [
+          randomUUID(),
+          params.ownerUserId,
+          params.mailboxId,
+          message.providerMessageId,
+          message.direction ?? 'inbox',
+          message.subject ?? null,
+          message.fromEmail ?? null,
+          message.fromName ?? null,
+          message.toRecipients ? JSON.stringify(message.toRecipients) : null,
+          message.snippet ?? null,
+          message.webLink ?? null,
+          message.receivedAt ?? null,
+          message.isRead ?? false,
+          message.bodyContent ?? null,
+          message.bodyContentType ?? null,
+        ],
+      );
+      count += 1;
+    }
+    await client.query('COMMIT');
+    return count;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function listMailMessages(params: {
+  ownerUserId: string;
+  mailboxIds?: string[] | null;
+  direction?: 'inbox' | 'sent' | 'all';
+  limit?: number;
+  cursor?: { receivedAt: string; id: string } | null;
+  search?: string | null;
+}): Promise<StoredMailMessage[]> {
+  const limit = Math.max(1, Math.min(params.limit ?? 50, 200));
+  const cursorReceived = params.cursor?.receivedAt ?? null;
+  const cursorId = params.cursor?.id ?? null;
+
+  const mailboxIds = params.mailboxIds && params.mailboxIds.length ? params.mailboxIds : null;
+  const search = params.search?.trim() || null;
+  const direction = params.direction && params.direction !== 'all' ? params.direction : null;
+
+  const conditions: string[] = ['owner_user_id = $1'];
+  const values: Array<string | number | null> = [params.ownerUserId];
+  let idx = values.length;
+
+  if (mailboxIds) {
+    conditions.push(`mailbox_id = ANY($${++idx})`);
+    values.push(mailboxIds);
+  }
+
+  if (direction) {
+    conditions.push(`direction = $${++idx}`);
+    values.push(direction);
+  }
+
+  if (search) {
+    conditions.push(
+      `(subject ILIKE $${++idx} OR from_email ILIKE $${idx} OR snippet ILIKE $${idx})`,
+    );
+    values.push(`%${search}%`);
+  }
+
+  if (cursorReceived) {
+    conditions.push(
+      `(received_at, id) < ($${++idx}, $${++idx})`,
+    );
+    values.push(cursorReceived, cursorId);
+  }
+
+  const { rows } = await pool.query<StoredMailMessage & { to_recipients: any }>(
+    `
+      SELECT
+        id,
+        owner_user_id AS "ownerUserId",
+        mailbox_id AS "mailboxId",
+        provider_message_id AS "providerMessageId",
+        direction,
+        subject,
+        from_email AS "fromEmail",
+        from_name AS "fromName",
+        to_recipients AS "toRecipients",
+        snippet,
+        web_link AS "webLink",
+        received_at AS "receivedAt",
+        is_read AS "isRead",
+        body_content AS "bodyContent",
+        body_content_type AS "bodyContentType",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+      FROM mail_receive
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY received_at DESC NULLS LAST, id DESC
+      LIMIT ${limit}
+    `,
+    values,
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    toRecipients: Array.isArray((row as any).toRecipients)
+      ? (row as any).toRecipients
+      : Array.isArray(row.toRecipients)
+      ? row.toRecipients
+      : undefined,
+  }));
+}
+
 export async function replaceCalendarEvents(params: {
   ownerUserId: string;
   mailboxIds: string[];
@@ -1309,20 +1593,16 @@ export async function replaceCalendarEvents(params: {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    if (mailboxIds.length) {
-      console.log('[replaceCalendarEvents] Deleting existing events for mailboxIds:', mailboxIds);
-      await client.query(
-        'DELETE FROM calendar_events WHERE owner_user_id = $1 AND mailbox_id = ANY($2)',
-        [ownerUserId, mailboxIds],
-      );
-    }
     if (events.length) {
       console.log('[replaceCalendarEvents] Inserting', events.length, 'events');
       const values: string[] = [];
       const args: Array<string | boolean | null> = [];
       let idx = 1;
+      const seen = new Set<string>();
       for (const event of events) {
         if (!event.mailboxId) continue;
+        if (seen.has(event.id)) continue;
+        seen.add(event.id);
         values.push(
           `($${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++})`,
         );
@@ -1342,7 +1622,7 @@ export async function replaceCalendarEvents(params: {
         );
       }
       if (values.length) {
-        console.log('[replaceCalendarEvents] Executing INSERT with', values.length, 'events');
+        console.log('[replaceCalendarEvents] Executing INSERT/UPSERT with', values.length, 'events');
         const result = await client.query(
           `
             INSERT INTO calendar_events (
@@ -1360,10 +1640,21 @@ export async function replaceCalendarEvents(params: {
               timezone
             )
             VALUES ${values.join(', ')}
+            ON CONFLICT (owner_user_id, provider_event_id) DO UPDATE
+            SET
+              mailbox_id = EXCLUDED.mailbox_id,
+              title = EXCLUDED.title,
+              start_at = EXCLUDED.start_at,
+              end_at = EXCLUDED.end_at,
+              is_all_day = EXCLUDED.is_all_day,
+              organizer = EXCLUDED.organizer,
+              location = EXCLUDED.location,
+              timezone = EXCLUDED.timezone,
+              updated_at = NOW()
           `,
           args,
         );
-        console.log('[replaceCalendarEvents] INSERT successful, rows affected:', result.rowCount);
+        console.log('[replaceCalendarEvents] UPSERT successful, rows affected:', result.rowCount);
       } else {
         console.warn('[replaceCalendarEvents] No values to insert - all events were filtered out');
       }

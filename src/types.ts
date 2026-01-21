@@ -60,6 +60,31 @@ export interface CalendarEvent {
   location?: string;
 }
 
+export interface MailRecipient {
+  email: string;
+  name?: string | null;
+}
+
+export interface MailMessage {
+  id: string;
+  ownerUserId: string;
+  mailboxId: string;
+  providerMessageId: string;
+  direction?: 'inbox' | 'sent';
+  subject?: string | null;
+  fromEmail?: string | null;
+  fromName?: string | null;
+  toRecipients?: MailRecipient[];
+  snippet?: string | null;
+  webLink?: string | null;
+  receivedAt?: string | null;
+  isRead?: boolean | null;
+  bodyContent?: string | null;
+  bodyContentType?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface BaseInfo extends Record<string, unknown> {
   name?: { first?: string; last?: string };
   contact?: {
