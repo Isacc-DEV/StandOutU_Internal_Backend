@@ -92,6 +92,7 @@ export interface BaseInfo extends Record<string, unknown> {
     phone?: string;
     phoneCode?: string;
     phoneNumber?: string;
+    password?: string;
   };
   links?: Record<string, string> & { linkedin?: string };
   location?: {
