@@ -129,8 +129,9 @@ RULES:
 4. Motivation questions: Show genuine interest in the company
 5. Agreement/consent to continue hiring process: Always select the affirmative checkbox or "Yes" option.
 6. Bot-detection/human verification questions: Answer with a natural human response. If unsure, return answer "[Bot Detection Quiz]" with no indices.
-7. Text answers: 40-150 words, assertive tone using "I have", "I've implemented", "I've successfully delivered"
-8. NEVER use hedging language: "While I haven't", "Although not directly", "similar to", "transferable skills"
+7. NEVER select placeholder options such as "Select One", "Choose", "Select...", "None", or empty values. If only placeholder options exist, return answer "[No Valid Options]" with no indices.
+8. Text answers: 40-150 words, assertive tone using "I have", "I've implemented", "I've successfully delivered"
+9. NEVER use hedging language: "While I haven't", "Although not directly", "similar to", "transferable skills"
 
 FORMAT:
 - SELECT questions: {"question": "exact question text", "answer": "exact option text", "selectedIndex": 0}
