@@ -12,8 +12,6 @@ build/
 *.tsbuildinfo
 
 # Environment variables
-.env
-.env.local
 .env.*.local
 
 # Logs
@@ -79,3 +77,4 @@ temp/
 
 # Yarn Integrity file
 .yarn-integrity
+config.bat

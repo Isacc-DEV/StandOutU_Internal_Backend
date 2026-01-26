@@ -47,6 +47,7 @@ export const registerAutofillApiRoutes = async (
     profile: z.record(z.any()),
     apiKey: z.string().optional(),
     model: z.string().optional(),
+    debug: z.boolean().optional(),
   });
 
   app.post("/autofill/ai", async (request, reply) => {
@@ -67,6 +68,16 @@ export const registerAutofillApiRoutes = async (
     );
 
     try {
+      if (body.debug) {
+        request.log.info(
+          {
+            questionCount: body.questions.length,
+            model,
+          },
+          "Autofill AI request",
+        );
+        request.log.info({ prompt }, "Autofill AI prompt");
+      }
       const content = await deps.callChatCompletion({
         provider: "OPENAI",
         model,
@@ -79,11 +90,19 @@ export const registerAutofillApiRoutes = async (
       if (!content) {
         return reply.status(502).send({ message: "LLM response empty" });
       }
+      if (body.debug) {
+        request.log.info({ content }, "Autofill AI response");
+      }
       const parsed = deps.extractJsonArrayPayload(content);
       if (!parsed) {
         return reply.status(502).send({ message: "LLM response not parseable" });
       }
-      return { answers: parsed, provider: "OPENAI", model };
+      return {
+        answers: parsed,
+        provider: "OPENAI",
+        model,
+        ...(body.debug ? { prompt, rawResponse: content } : {}),
+      };
     } catch (err) {
       request.log.error({ err }, "Autofill AI failed");
       return reply.status(502).send({ message: "Autofill AI failed" });
