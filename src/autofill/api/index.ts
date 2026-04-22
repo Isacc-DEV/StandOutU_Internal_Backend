@@ -8,7 +8,7 @@ import {
 } from "../prompt";
 
 type ChatCompletionParams = {
-  provider: "OPENAI" | "HUGGINGFACE" | "GEMINI";
+  provider: "OPENAI";
   model: string;
   apiKey: string;
   systemPrompt?: string;
@@ -60,8 +60,9 @@ export const registerAutofillApiRoutes = async (
     const model =
       deps.trimString(body.model) ||
       deps.trimString(process.env.OPENAI_AUTOFILL_MODEL) ||
+      deps.trimString(process.env.OPENAI_MODEL) ||
       deps.trimString(process.env.OPENAI_GREENHOUSE_MODEL) ||
-      "gpt-4";
+      "gpt-5.4-mini";
     const prompt = buildAutofillPrompt(
       body.questions as AutofillAiQuestion[],
       body.profile ?? {},

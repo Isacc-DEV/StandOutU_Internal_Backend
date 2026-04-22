@@ -304,7 +304,7 @@ export interface ApplicationSummary {
   reviewerEmail?: string | null;
 }
 
-export type LlmProvider = "OPENAI" | "HUGGINGFACE" | "GEMINI";
+export type LlmProvider = "OPENAI";
 
 export interface LlmSettings {
   id: string;

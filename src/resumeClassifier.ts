@@ -124,8 +124,21 @@ const TITLE_KEYWORDS: Record<string, RegExp[]> = {
 
 const JAVASCRIPT_PATTERN = /\bjavascript\b/i;
 
-const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACEHUB_API_TOKEN;
-const HF_MODEL = 'meta-llama/Meta-Llama-3-8B-Instruct';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5.4-mini';
+
+function buildOpenAiMaxTokensPayload(model: string, maxTokens: number) {
+  const normalizedModel = model.trim().toLowerCase();
+  if (
+    normalizedModel === 'gpt-5' ||
+    normalizedModel.startsWith('gpt-5.') ||
+    normalizedModel.startsWith('gpt-5-') ||
+    /^o\d/.test(normalizedModel)
+  ) {
+    return { max_completion_tokens: maxTokens };
+  }
+  return { max_tokens: maxTokens };
+}
 
 type ScoreMap = Record<string, number>;
 
@@ -227,20 +240,20 @@ function classify(title: string | undefined, text: string) {
   return { best, scores: finalScores, ranked: sorted };
 }
 
-async function callHuggingFace(prompt: string): Promise<string | undefined> {
-  if (!HF_TOKEN) return undefined;
+async function callOpenAi(prompt: string): Promise<string | undefined> {
+  if (!OPENAI_API_KEY) return undefined;
   try {
-    const res = await fetch('https://router.huggingface.co/v1/chat/completions', {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${HF_TOKEN}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: HF_MODEL,
+        model: OPENAI_MODEL,
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 256,
-        temperature: 0.1,
+        ...buildOpenAiMaxTokensPayload(OPENAI_MODEL, 6000),
+        temperature: 0.3,
       }),
     });
     const data = (await res.json()) as any;
@@ -251,13 +264,13 @@ async function callHuggingFace(prompt: string): Promise<string | undefined> {
       data?.text;
     if (typeof content === 'string') return content.trim();
   } catch {
-    // ignore HF errors
+    // ignore OpenAI errors
   }
   return undefined;
 }
 
 export async function callPromptPack(prompt: string): Promise<any | undefined> {
-  const raw = await callHuggingFace(prompt);
+  const raw = await callOpenAi(prompt);
   if (!raw) return undefined;
   try {
     return JSON.parse(raw);

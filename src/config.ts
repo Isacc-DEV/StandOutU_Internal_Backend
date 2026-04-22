@@ -31,12 +31,7 @@ export const config = {
   
   RESUME_DIR: process.env.RESUME_DIR || '',
   
-  HF_TOKEN: process.env.HF_TOKEN || 
-    process.env.HUGGINGFACEHUB_API_TOKEN || 
-    process.env.HUGGING_FACE_TOKEN || 
-    '',
-  
-  HF_MODEL: process.env.HF_MODEL || 'meta-llama/Meta-Llama-3-8B-Instruct',
+  OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-5.4-mini',
   
   SUPABASE_URL: process.env.SUPABASE_URL || '',
   SUPABASE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY || '',
