@@ -1,5 +1,9 @@
 import "dotenv/config";
 
+function normalizeUrl(value: string | undefined) {
+  return (value || "").trim().replace(/\/+$/, "");
+}
+
 const defaultCorsOrigins = [
   'http://localhost:3000',
   'http://localhost:3300',
@@ -7,9 +11,13 @@ const defaultCorsOrigins = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:3300',
   'http://127.0.0.1:4000',
-  'http://89.117.21.252:3000/',
-  'http://89.117.21.252/',
 ];
+
+const frontendUrl = normalizeUrl(process.env.FRONTEND_URL || process.env.NEXTAUTH_URL);
+const publicApiUrl = normalizeUrl(process.env.PUBLIC_API_URL);
+const configuredCorsDefaults = frontendUrl
+  ? Array.from(new Set([...defaultCorsOrigins, frontendUrl]))
+  : defaultCorsOrigins;
 
 const corsEnv = (process.env.CORS_ORIGINS || '').trim();
 const corsOrigins: string[] | true =
@@ -22,12 +30,15 @@ const corsOrigins: string[] | true =
 
 export const config = {
   PORT: process.env.PORT ? Number(process.env.PORT) : 4000,
+  HOST: (process.env.HOST || '0.0.0.0').trim() || '0.0.0.0',
   
   DATABASE_URL: process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/ops_db',
 
   DEBUG_MODE: false,
   
-  CORS_ORIGINS: corsEnv ? corsOrigins : defaultCorsOrigins,
+  CORS_ORIGINS: corsEnv ? corsOrigins : configuredCorsDefaults,
+  FRONTEND_URL: frontendUrl || 'http://localhost:3000',
+  PUBLIC_API_URL: publicApiUrl,
   
   RESUME_DIR: process.env.RESUME_DIR || '',
   

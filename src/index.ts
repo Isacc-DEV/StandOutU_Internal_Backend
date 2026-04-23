@@ -242,6 +242,10 @@ function buildSafePdfFilename(value?: string | null) {
   return trimmed.toLowerCase().endsWith(".pdf") ? trimmed : `${trimmed}.pdf`;
 }
 
+function getFrontendBaseUrl(frontendRedirect?: string) {
+  return (frontendRedirect || config.FRONTEND_URL || "http://localhost:3000").replace(/\/+$/, "");
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== "object") return false;
   return Object.prototype.toString.call(value) === "[object Object]";
@@ -3862,11 +3866,7 @@ async function bootstrap() {
       .safeParse(request.query);
 
     if (!parsed.success) {
-      const frontendUrl = Array.isArray(config.CORS_ORIGINS)
-        ? config.CORS_ORIGINS[0]
-        : typeof config.CORS_ORIGINS === "string"
-        ? config.CORS_ORIGINS
-        : "http://localhost:3000";
+      const frontendUrl = getFrontendBaseUrl();
       return reply.redirect(
         `${frontendUrl}/calendar?error=${encodeURIComponent("Invalid query parameters")}`
       );
@@ -3887,12 +3887,7 @@ async function bootstrap() {
 
     // Determine frontend URL
     const frontendUrl =
-      frontendRedirect ||
-      (Array.isArray(config.CORS_ORIGINS)
-        ? config.CORS_ORIGINS[0]
-        : typeof config.CORS_ORIGINS === "string"
-        ? config.CORS_ORIGINS
-        : "http://localhost:3000");
+      getFrontendBaseUrl(frontendRedirect);
 
     // Handle errors from Microsoft
     if (error) {
@@ -7361,12 +7356,15 @@ ${body.question}`;
     if (err) app.log.error(err);
   });
 
-  app.listen({ port: PORT, host: "0.0.0.0" }, (err) => {
+  app.listen({ port: PORT, host: config.HOST }, (err) => {
     if (err) {
       app.log.error(err);
       process.exit(1);
     }
-    app.log.info(`API running on http://localhost:${PORT}`);
+    const loggedUrl =
+      config.PUBLIC_API_URL ||
+      `http://${config.HOST === "0.0.0.0" ? "localhost" : config.HOST}:${PORT}`;
+    app.log.info(`API running on ${loggedUrl}`);
   });
 
   app.get("/ws/community", { websocket: true }, async (socket, req) => {
