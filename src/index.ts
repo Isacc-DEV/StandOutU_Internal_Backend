@@ -18,6 +18,7 @@ import {
   CalendarEvent,
   CommunityMessage,
   LabelAlias,
+  Profile,
   User,
 } from "./types";
 import { authGuard, forbidObserver, signToken, verifyToken } from "./auth";
@@ -114,6 +115,7 @@ import {
   listPinnedMessages,
   listProfiles,
   listProfilesForBidder,
+  listProfilesForManager,
   listTasks,
   listTasksForUser,
   listTaskAssignmentRequests,
@@ -210,6 +212,22 @@ function trimString(val: unknown): string {
   if (typeof val === "string") return val.trim();
   if (typeof val === "number") return String(val);
   return "";
+}
+
+function getProfileAssignedManagerId(profile: Pick<Profile, "assignedManagerUserId" | "createdBy">) {
+  return trimString(profile.assignedManagerUserId ?? profile.createdBy) || null;
+}
+
+function canManageProfile(actor: User, profile: Pick<Profile, "assignedManagerUserId" | "createdBy">) {
+  if (actor.role === "ADMIN") return true;
+  return getProfileAssignedManagerId(profile) === actor.id;
+}
+
+async function findValidProfileManager(userId: string) {
+  const manager = await findUserById(userId);
+  if (!manager || manager.isActive === false) return null;
+  if (manager.role !== "ADMIN" && manager.role !== "MANAGER") return null;
+  return manager;
 }
 
 function trimToNull(val?: string | null) {
@@ -2660,8 +2678,15 @@ async function bootstrap() {
       if (userId) {
         const target = await findUserById(userId);
         if (target?.role === "BIDDER" && target.isActive !== false) {
-          return listProfilesForBidder(target.id);
+          const profiles = await listProfilesForBidder(target.id);
+          if (actor.role === "MANAGER") {
+            return profiles.filter((profile) => canManageProfile(actor, profile));
+          }
+          return profiles;
         }
+      }
+      if (actor.role === "MANAGER") {
+        return listProfilesForManager(actor.id);
       }
       return listProfiles();
     }
@@ -2706,6 +2731,7 @@ async function bootstrap() {
       majorField: z.string().optional(),
       graduationAt: z.string().optional(),
       resumeTemplateId: z.string().uuid().optional().nullable(),
+      assignedManagerUserId: z.string().uuid().optional().nullable(),
     });
     const body = schema.parse(request.body);
     const profileId = randomUUID();
@@ -2718,6 +2744,22 @@ async function bootstrap() {
         return reply.status(400).send({ message: "Resume template not found" });
       }
       resumeTemplateName = template.name;
+    }
+    const requestedAssignedManagerId = trimString(body.assignedManagerUserId);
+    let assignedManagerUserId = actor.id;
+    if (actor.role === "MANAGER") {
+      if (requestedAssignedManagerId && requestedAssignedManagerId !== actor.id) {
+        return reply
+          .status(403)
+          .send({ message: "Managers can only assign new profiles to themselves" });
+      }
+    } else {
+      assignedManagerUserId = requestedAssignedManagerId || actor.id;
+      const assignedManager = await findValidProfileManager(assignedManagerUserId);
+      if (!assignedManager) {
+        return reply.status(400).send({ message: "Assigned manager not found" });
+      }
+      assignedManagerUserId = assignedManager.id;
     }
     const incomingBase = (body.baseInfo ?? {}) as BaseInfo;
     const baseResume = (body.baseResume ?? {}) as Record<string, unknown>;
@@ -2789,6 +2831,7 @@ async function bootstrap() {
       resumeTemplateId: resumeTemplateId ?? null,
       resumeTemplateName,
       createdBy: actor.id,
+      assignedManagerUserId,
       createdAt: now,
       updatedAt: now,
     };
@@ -2802,7 +2845,8 @@ async function bootstrap() {
     } catch (err) {
       request.log.error({ err }, "profile create notification failed");
     }
-    return profile;
+    const createdProfile = await findProfileById(profile.id);
+    return createdProfile ?? profile;
   });
 
   app.patch("/profiles/:id", async (request, reply) => {
@@ -2817,6 +2861,9 @@ async function bootstrap() {
     const existing = await findProfileById(id);
     if (!existing)
       return reply.status(404).send({ message: "Profile not found" });
+    if (!canManageProfile(actor, existing)) {
+      return reply.status(403).send({ message: "Only admins or the assigned manager can update this profile" });
+    }
 
     const schema = z.object({
       displayName: z.string().min(2).optional(),
@@ -2824,6 +2871,7 @@ async function bootstrap() {
       baseResume: z.record(z.any()).optional(),
       baseAdditionalBullets: z.record(z.number()).optional(),
       resumeTemplateId: z.string().uuid().optional().nullable(),
+      assignedManagerUserId: z.string().uuid().optional().nullable(),
     });
     const body = schema.parse(request.body ?? {});
 
@@ -2842,6 +2890,22 @@ async function bootstrap() {
       }
     }
 
+    let assignedManagerUserId = getProfileAssignedManagerId(existing);
+    if (body.assignedManagerUserId !== undefined) {
+      if (actor.role !== "ADMIN") {
+        return reply.status(403).send({ message: "Only admins can change assigned manager" });
+      }
+      const requestedAssignedManagerId = trimString(body.assignedManagerUserId);
+      if (!requestedAssignedManagerId) {
+        return reply.status(400).send({ message: "Assigned manager is required" });
+      }
+      const assignedManager = await findValidProfileManager(requestedAssignedManagerId);
+      if (!assignedManager) {
+        return reply.status(400).send({ message: "Assigned manager not found" });
+      }
+      assignedManagerUserId = assignedManager.id;
+    }
+
     const incomingBase = (body.baseInfo ?? {}) as BaseInfo;
     const mergedBase = mergeBaseInfo(existing.baseInfo, incomingBase);
     const baseResume = (body.baseResume ?? existing.baseResume ?? {}) as Record<string, unknown>;
@@ -2855,6 +2919,7 @@ async function bootstrap() {
       baseAdditionalBullets,
       resumeTemplateId,
       resumeTemplateName,
+      assignedManagerUserId,
       updatedAt: new Date().toISOString(),
     };
 
@@ -2865,8 +2930,10 @@ async function bootstrap() {
       baseResume: updatedProfile.baseResume,
       baseAdditionalBullets: updatedProfile.baseAdditionalBullets,
       resumeTemplateId: updatedProfile.resumeTemplateId,
+      assignedManagerUserId: updatedProfile.assignedManagerUserId,
     });
-    return updatedProfile;
+    const refreshedProfile = await findProfileById(updatedProfile.id);
+    return refreshedProfile ?? updatedProfile;
   });
 
   app.delete("/profiles/:id", async (request, reply) => {
@@ -2878,6 +2945,13 @@ async function bootstrap() {
         .send({ message: "Only managers or admins can delete profiles" });
     }
     const { id } = request.params as { id: string };
+    const existing = await findProfileById(id);
+    if (!existing) {
+      return reply.status(404).send({ message: "Profile not found" });
+    }
+    if (!canManageProfile(actor, existing)) {
+      return reply.status(403).send({ message: "Only admins or the assigned manager can delete this profile" });
+    }
     const deleted = await deleteProfile(id);
     if (!deleted) {
       return reply.status(404).send({ message: "Profile not found" });
@@ -3678,7 +3752,7 @@ async function bootstrap() {
     if (!profile) {
       return reply.status(404).send({ message: "Profile not found" });
     }
-    const isManager = actor.role === "ADMIN" || actor.role === "MANAGER";
+    const isManager = canManageProfile(actor, profile);
     const isAssignedBidder = profile.assignedBidderId === actor.id;
     if (!isManager && !isAssignedBidder) {
       return reply
@@ -5330,7 +5404,14 @@ async function bootstrap() {
 
   app.get("/assignments", async (request, reply) => {
     if (forbidObserver(reply, request.authUser)) return;
-    return listAssignments();
+    const actor = request.authUser;
+    if (!actor || actor.isActive === false) {
+      return reply.status(401).send({ message: "Unauthorized" });
+    }
+    return listAssignments(
+      actor.role === "MANAGER" ? actor.id : undefined,
+      actor.role === "BIDDER" ? actor.id : undefined,
+    );
   });
   app.post("/assignments", async (request, reply) => {
     if (forbidObserver(reply, request.authUser)) return;
@@ -5350,6 +5431,9 @@ async function bootstrap() {
     const bidder = await findUserById(body.bidderUserId);
     if (!profile || !bidder || bidder.role !== "BIDDER") {
       return reply.status(400).send({ message: "Invalid profile or bidder" });
+    }
+    if (!canManageProfile(actor, profile)) {
+      return reply.status(403).send({ message: "Only admins or the assigned manager can assign this profile" });
     }
 
     const existing = await findActiveAssignmentByProfile(body.profileId);
@@ -5395,7 +5479,20 @@ async function bootstrap() {
 
   app.post("/assignments/:id/unassign", async (request, reply) => {
     if (forbidObserver(reply, request.authUser)) return;
+    const actor = request.authUser;
+    if (!actor || (actor.role !== "MANAGER" && actor.role !== "ADMIN")) {
+      return reply
+        .status(403)
+        .send({ message: "Only managers or admins can unassign profiles" });
+    }
     const { id } = request.params as { id: string };
+    const profile = await findProfileById(id);
+    if (!profile) {
+      return reply.status(404).send({ message: "Profile not found" });
+    }
+    if (!canManageProfile(actor, profile)) {
+      return reply.status(403).send({ message: "Only admins or the assigned manager can unassign this profile" });
+    }
     const assignment = await closeAssignmentById(id);
     if (!assignment)
       return reply.status(404).send({ message: "Assignment not found" });

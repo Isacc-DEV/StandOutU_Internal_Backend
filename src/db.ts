@@ -198,6 +198,7 @@ export async function initDb() {
         base_resume JSONB DEFAULT '{}'::jsonb,
         base_additional_bullets JSONB DEFAULT '{}'::jsonb,
         created_by UUID,
+        assigned_manager_user_id UUID REFERENCES users(id),
         assigned_bidder_id UUID REFERENCES users(id),
         assigned_by UUID REFERENCES users(id),
         assigned_at TIMESTAMP,
@@ -469,6 +470,11 @@ export async function initDb() {
 
       ALTER TABLE IF EXISTS profiles
         ADD COLUMN IF NOT EXISTS resume_template_id UUID REFERENCES resume_templates(id) ON DELETE SET NULL;
+      ALTER TABLE IF EXISTS profiles
+        ADD COLUMN IF NOT EXISTS assigned_manager_user_id UUID REFERENCES users(id);
+      UPDATE profiles
+        SET assigned_manager_user_id = created_by
+        WHERE assigned_manager_user_id IS NULL AND created_by IS NOT NULL;
 
       CREATE INDEX IF NOT EXISTS idx_profile_accounts_profile ON profile_accounts(profile_id);
       CREATE INDEX IF NOT EXISTS idx_profile_accounts_email ON profile_accounts(email);
@@ -477,6 +483,7 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_profiles_base_info_gin ON profiles USING GIN (base_info);
       CREATE INDEX IF NOT EXISTS idx_profiles_base_resume_gin ON profiles USING GIN (base_resume);
       CREATE INDEX IF NOT EXISTS idx_profiles_created_by ON profiles(created_by);
+      CREATE INDEX IF NOT EXISTS idx_profiles_assigned_manager_user_id ON profiles(assigned_manager_user_id);
       CREATE INDEX IF NOT EXISTS idx_profiles_assigned_bidder_id ON profiles(assigned_bidder_id);
       CREATE INDEX IF NOT EXISTS idx_profiles_resume_template_id ON profiles(resume_template_id);
       CREATE INDEX IF NOT EXISTS idx_applications_bidder ON applications(bidder_user_id);
@@ -635,11 +642,16 @@ export async function initDb() {
       ALTER TABLE IF EXISTS profiles
         ADD COLUMN IF NOT EXISTS base_additional_bullets JSONB DEFAULT '{}'::jsonb;
       ALTER TABLE IF EXISTS profiles
+        ADD COLUMN IF NOT EXISTS assigned_manager_user_id UUID REFERENCES users(id);
+      ALTER TABLE IF EXISTS profiles
         ADD COLUMN IF NOT EXISTS assigned_bidder_id UUID REFERENCES users(id);
       ALTER TABLE IF EXISTS profiles
         ADD COLUMN IF NOT EXISTS assigned_by UUID REFERENCES users(id);
       ALTER TABLE IF EXISTS profiles
         ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP;
+      UPDATE profiles
+        SET assigned_manager_user_id = created_by
+        WHERE assigned_manager_user_id IS NULL AND created_by IS NOT NULL;
 
       ALTER TABLE IF EXISTS tasks
         ALTER COLUMN due_date DROP NOT NULL;
@@ -1037,13 +1049,14 @@ export async function insertProfile(profile: {
   baseAdditionalBullets?: Record<string, number>;
   resumeTemplateId?: string | null;
   createdBy?: string;
+  assignedManagerUserId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }) {
   await pool.query(
     `
-      INSERT INTO profiles (id, display_name, base_info, base_resume, base_additional_bullets, resume_template_id, created_by, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO profiles (id, display_name, base_info, base_resume, base_additional_bullets, resume_template_id, created_by, assigned_manager_user_id, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       ON CONFLICT (id) DO NOTHING
     `,
     [
@@ -1054,6 +1067,7 @@ export async function insertProfile(profile: {
       JSON.stringify(profile.baseAdditionalBullets ?? {}),
       profile.resumeTemplateId ?? null,
       profile.createdBy ?? null,
+      profile.assignedManagerUserId ?? profile.createdBy ?? null,
       profile.createdAt ?? new Date().toISOString(),
       profile.updatedAt ?? new Date().toISOString(),
     ],
@@ -1125,6 +1139,8 @@ export async function listProfiles(): Promise<Profile[]> {
         p.resume_template_id AS "resumeTemplateId",
         rt.name AS "resumeTemplateName",
         p.created_by AS "createdBy",
+        COALESCE(p.assigned_manager_user_id, p.created_by) AS "assignedManagerUserId",
+        COALESCE(manager_user.user_name, manager_user.name) AS "assignedManagerName",
         p.assigned_bidder_id AS "assignedBidderId",
         p.assigned_by AS "assignedBy",
         p.assigned_at AS "assignedAt",
@@ -1132,8 +1148,39 @@ export async function listProfiles(): Promise<Profile[]> {
         p.updated_at AS "updatedAt"
       FROM profiles p
       LEFT JOIN resume_templates rt ON rt.id = p.resume_template_id
+      LEFT JOIN users manager_user ON manager_user.id = COALESCE(p.assigned_manager_user_id, p.created_by)
       ORDER BY p.created_at DESC
     `,
+  );
+  return rows;
+}
+
+export async function listProfilesForManager(managerUserId: string): Promise<Profile[]> {
+  const { rows } = await pool.query<Profile>(
+    `
+      SELECT
+        p.id,
+        p.display_name AS "displayName",
+        p.base_info AS "baseInfo",
+        p.base_resume AS "baseResume",
+        p.base_additional_bullets AS "baseAdditionalBullets",
+        p.resume_template_id AS "resumeTemplateId",
+        rt.name AS "resumeTemplateName",
+        p.created_by AS "createdBy",
+        COALESCE(p.assigned_manager_user_id, p.created_by) AS "assignedManagerUserId",
+        COALESCE(manager_user.user_name, manager_user.name) AS "assignedManagerName",
+        p.assigned_bidder_id AS "assignedBidderId",
+        p.assigned_by AS "assignedBy",
+        p.assigned_at AS "assignedAt",
+        p.created_at AS "createdAt",
+        p.updated_at AS "updatedAt"
+      FROM profiles p
+      LEFT JOIN resume_templates rt ON rt.id = p.resume_template_id
+      LEFT JOIN users manager_user ON manager_user.id = COALESCE(p.assigned_manager_user_id, p.created_by)
+      WHERE COALESCE(p.assigned_manager_user_id, p.created_by) = $1
+      ORDER BY p.created_at DESC
+    `,
+    [managerUserId],
   );
   return rows;
 }
@@ -1150,6 +1197,8 @@ export async function listProfilesForBidder(bidderUserId: string): Promise<Profi
         p.resume_template_id AS "resumeTemplateId",
         rt.name AS "resumeTemplateName",
         p.created_by AS "createdBy",
+        COALESCE(p.assigned_manager_user_id, p.created_by) AS "assignedManagerUserId",
+        COALESCE(manager_user.user_name, manager_user.name) AS "assignedManagerName",
         p.assigned_bidder_id AS "assignedBidderId",
         p.assigned_by AS "assignedBy",
         p.assigned_at AS "assignedAt",
@@ -1157,6 +1206,7 @@ export async function listProfilesForBidder(bidderUserId: string): Promise<Profi
         p.updated_at AS "updatedAt"
       FROM profiles p
       LEFT JOIN resume_templates rt ON rt.id = p.resume_template_id
+      LEFT JOIN users manager_user ON manager_user.id = COALESCE(p.assigned_manager_user_id, p.created_by)
       WHERE p.assigned_bidder_id = $1
       ORDER BY p.created_at DESC
     `,
@@ -1177,6 +1227,8 @@ export async function findProfileById(id: string): Promise<Profile | undefined> 
         p.resume_template_id AS "resumeTemplateId",
         rt.name AS "resumeTemplateName",
         p.created_by AS "createdBy",
+        COALESCE(p.assigned_manager_user_id, p.created_by) AS "assignedManagerUserId",
+        COALESCE(manager_user.user_name, manager_user.name) AS "assignedManagerName",
         p.assigned_bidder_id AS "assignedBidderId",
         p.assigned_by AS "assignedBy",
         p.assigned_at AS "assignedAt",
@@ -1184,6 +1236,7 @@ export async function findProfileById(id: string): Promise<Profile | undefined> 
         p.updated_at AS "updatedAt"
       FROM profiles p
       LEFT JOIN resume_templates rt ON rt.id = p.resume_template_id
+      LEFT JOIN users manager_user ON manager_user.id = COALESCE(p.assigned_manager_user_id, p.created_by)
       WHERE p.id = $1
     `,
     [id],
@@ -1213,7 +1266,11 @@ export async function listProfileAccountsForUser(
       FROM profile_accounts pa
       JOIN profiles p ON p.id = pa.profile_id
       WHERE
-        ($1 = 'ADMIN' OR $1 = 'MANAGER' OR p.assigned_bidder_id = $2)
+        (
+          $1 = 'ADMIN'
+          OR ($1 = 'MANAGER' AND COALESCE(p.assigned_manager_user_id, p.created_by) = $2)
+          OR p.assigned_bidder_id = $2
+        )
         AND ($3::uuid IS NULL OR pa.profile_id = $3)
       ORDER BY pa.updated_at DESC, pa.created_at DESC
     `,
@@ -2520,6 +2577,7 @@ export async function updateProfileRecord(profile: {
   baseResume?: Record<string, unknown>;
   baseAdditionalBullets?: Record<string, number>;
   resumeTemplateId?: string | null;
+  assignedManagerUserId?: string | null;
 }) {
   await pool.query(
     `
@@ -2529,6 +2587,7 @@ export async function updateProfileRecord(profile: {
           base_resume = $4,
           base_additional_bullets = $5,
           resume_template_id = $6,
+          assigned_manager_user_id = $7,
           updated_at = NOW()
       WHERE id = $1
     `,
@@ -2539,6 +2598,7 @@ export async function updateProfileRecord(profile: {
       JSON.stringify(profile.baseResume ?? {}),
       JSON.stringify(profile.baseAdditionalBullets ?? {}),
       profile.resumeTemplateId ?? null,
+      profile.assignedManagerUserId ?? null,
     ],
   );
 }
@@ -3316,7 +3376,10 @@ export async function rejectTaskAssignmentRequest(
 }
 
 
-export async function listAssignments(): Promise<Assignment[]> {
+export async function listAssignments(
+  managerUserId?: string,
+  bidderUserId?: string,
+): Promise<Assignment[]> {
   const { rows } = await pool.query<Assignment>(
     `
       SELECT
@@ -3328,8 +3391,11 @@ export async function listAssignments(): Promise<Assignment[]> {
         NULL::TIMESTAMP AS "unassignedAt"
       FROM profiles
       WHERE assigned_bidder_id IS NOT NULL
+        AND ($1::uuid IS NULL OR COALESCE(assigned_manager_user_id, created_by) = $1)
+        AND ($2::uuid IS NULL OR assigned_bidder_id = $2)
       ORDER BY assigned_at DESC
     `,
+    [managerUserId ?? null, bidderUserId ?? null],
   );
   return rows;
 }

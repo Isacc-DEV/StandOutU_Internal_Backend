@@ -136,6 +136,8 @@ export interface Profile {
   baseResume?: Record<string, unknown>;
   baseAdditionalBullets?: Record<string, number>;
   createdBy: string;
+  assignedManagerUserId?: string | null;
+  assignedManagerName?: string | null;
   createdAt: string;
   updatedAt: string;
   resumeTemplateId?: string | null;
