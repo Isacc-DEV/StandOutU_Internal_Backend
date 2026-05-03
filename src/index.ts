@@ -3122,46 +3122,71 @@ async function bootstrap() {
       const size = await page.evaluate(() => {
         const body = document.body;
         const doc = document.documentElement;
-        const candidates = body ? Array.from(body.children) : [];
-        let target: Element = body || doc;
-        let bestArea = 0;
-        for (const el of candidates as Element[]) {
-          const rect = el.getBoundingClientRect();
-          const area = rect.width * rect.height;
-          if (area > bestArea) {
-            bestArea = area;
-            target = el;
-          }
-        }
-        const targetEl = target as HTMLElement;
-        if (targetEl?.style) {
-          targetEl.style.margin = "0";
-        }
         if (doc?.style) {
           doc.style.margin = "0";
           doc.style.padding = "0";
+          doc.style.overflow = "visible";
         }
         if (body?.style) {
           body.style.margin = "0";
           body.style.padding = "0";
+          body.style.overflow = "visible";
         }
-        const rect = target.getBoundingClientRect();
-        const width = Math.max(1, Math.ceil(rect.width));
-        const height = Math.max(1, Math.ceil(rect.height));
-        if (body?.style) {
-          body.style.width = `${width}px`;
-          body.style.height = `${height}px`;
-          body.style.overflow = "hidden";
-        }
-        if (doc?.style) {
-          doc.style.width = `${width}px`;
-          doc.style.height = `${height}px`;
-          doc.style.overflow = "hidden";
-        }
+        const elements = body ? Array.from(body.querySelectorAll("*")) : [];
+        const bounds = elements.reduce(
+          (acc, el) => {
+            const rect = el.getBoundingClientRect();
+            if (!rect.width && !rect.height) return acc;
+            return {
+              left: Math.min(acc.left, rect.left),
+              top: Math.min(acc.top, rect.top),
+              right: Math.max(acc.right, rect.right),
+              bottom: Math.max(acc.bottom, rect.bottom),
+            };
+          },
+          { left: 0, top: 0, right: 0, bottom: 0 },
+        );
+        const bodyRect = body?.getBoundingClientRect();
+        const docRect = doc.getBoundingClientRect();
+        const overflowingDocHeight = doc.scrollHeight > window.innerHeight ? doc.scrollHeight : 0;
+        const overflowingBodyHeight =
+          body && body.scrollHeight > window.innerHeight ? body.scrollHeight : 0;
+        const width = Math.max(
+          1,
+          Math.ceil(
+            Math.max(
+              bounds.right - bounds.left,
+              body?.scrollWidth ?? 0,
+              docRect.width,
+              bodyRect?.width ?? 0,
+            ),
+          ),
+        );
+        const height = Math.max(
+          1,
+          Math.ceil(
+            Math.max(
+              bounds.bottom - bounds.top,
+              overflowingDocHeight,
+              overflowingBodyHeight,
+              bodyRect?.height ?? 0,
+            ),
+          ),
+        );
         return { width, height };
       });
       const pdfWidth = Math.max(1, Math.ceil(size.width));
-      const pdfHeight = Math.max(1, Math.ceil(size.height));
+      const pdfHeight = Math.max(1, Math.ceil(size.height + 24));
+      await page.evaluate((height) => {
+        const body = document.body;
+        const doc = document.documentElement;
+        if (doc?.style) {
+          doc.style.minHeight = `${height}px`;
+        }
+        if (body?.style) {
+          body.style.minHeight = `${height}px`;
+        }
+      }, pdfHeight);
       const pdf = await page.pdf({
         width: `${pdfWidth}px`,
         height: `${pdfHeight}px`,
